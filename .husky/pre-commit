@@ -1,0 +1,12 @@
+# Run lint-staged (Formats and Lints staged files)
+
+npx lint-staged
+
+# Only run typecheck if TypeScript files are staged
+
+if git diff --cached --name-only | grep -qE '\.(ts|tsx)$'; then
+echo "TypeScript files detected, running typecheck..."
+pnpm typecheck
+else
+echo "No TypeScript files changed, skipping typecheck"
+fi

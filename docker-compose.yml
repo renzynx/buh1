@@ -1,0 +1,20 @@
+services:
+  buh:
+    image: ghcr.io/renzynx/buh1:latest
+    container_name: buh
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=/app/db/sqlite.db
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_BASE_URL=${AUTH_BASE_URL:-http://localhost:3000}
+      - APP_NAME=${APP_NAME:-Buh}
+      - PORT=3000
+    volumes:
+      - storage_data:/app/storage
+      - db_data:/app/db
+
+volumes:
+  storage_data:
+  db_data:

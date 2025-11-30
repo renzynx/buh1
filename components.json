@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "pages/tailwind.css",
+    "baseColor": "gray",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils"
+  },
+  "registries": {
+    "@coss": "https://coss.com/ui/r/{name}.json",
+    "@wds": "https://wds-shadcn-registry.netlify.app/r/{name}.json"
+  }
+}
