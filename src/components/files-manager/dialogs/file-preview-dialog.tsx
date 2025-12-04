@@ -49,7 +49,7 @@ export function FilePreviewDialog({
       if (!res.ok) throw new Error("Failed to fetch preview");
       return res.text();
     },
-    enabled: !!file && isTextType,
+    enabled: Boolean(file) && isTextType,
     retry: false,
   });
 

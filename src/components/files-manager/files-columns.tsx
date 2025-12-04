@@ -29,8 +29,8 @@ export function getColumns({
       header: ({ table }) => {
         const rows = table.getRowModel().rows;
         const allSelected =
-          rows.length > 0 && rows.every((r) => !!rowSelection[r.id]);
-        const someSelected = rows.some((r) => !!rowSelection[r.id]);
+          rows.length > 0 && rows.every((r) => Boolean(rowSelection[r.id]));
+        const someSelected = rows.some((r) => Boolean(rowSelection[r.id]));
         return (
           <Checkbox
             checked={
@@ -58,7 +58,7 @@ export function getColumns({
       },
       cell: ({ row }) => (
         <Checkbox
-          checked={!!rowSelection[row.id]}
+          checked={Boolean(rowSelection[row.id])}
           onCheckedChange={(v: boolean | "indeterminate") => {
             setRowSelection((prev) => {
               const next = { ...prev };

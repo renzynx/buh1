@@ -156,7 +156,7 @@ function TreeNode({
   query,
 }: TreeNodeProps) {
   const trpc = useTRPC();
-  const isExpanded = !!expandedIds[node.id];
+  const isExpanded = Boolean(expandedIds[node.id]);
   const isSelected = value === node.id;
   const [isToggling, setIsToggling] = useState(false);
 

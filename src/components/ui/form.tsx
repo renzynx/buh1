@@ -268,7 +268,7 @@ export function Checkbox({
       <ShadcnCheckbox
         id={field.name}
         checked={field.state.value ?? false}
-        onCheckedChange={(checked) => field.handleChange(!!checked)}
+        onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
         onBlur={field.handleBlur}
       />
       <div className="grid gap-1.5 leading-none">
