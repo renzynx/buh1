@@ -52,7 +52,7 @@ export function DeleteInviteDialog({
 
   return (
     <AlertDialog
-      open={!!inviteCode}
+      open={Boolean(inviteCode)}
       onOpenChange={(open) => !open && onClose()}
     >
       <AlertDialogContent>

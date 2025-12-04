@@ -276,7 +276,7 @@ export function FilesTable({
           table
             ? table
                 .getRowModel()
-                .rows.filter((r) => !!rowSelection[r.id])
+                .rows.filter((r) => Boolean(rowSelection[r.id]))
                 .map((r) => (r.original as FileRow).id)
                 .filter((id): id is string => id != null && id !== "")
             : []

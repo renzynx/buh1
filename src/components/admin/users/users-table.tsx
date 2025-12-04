@@ -80,7 +80,7 @@ export function UsersTable() {
 
   const currentUserRole = session?.user?.role ?? "user";
   const currentUserId = session?.user?.id;
-  const isCurrentlyImpersonating = !!session?.session?.impersonatedBy;
+  const isCurrentlyImpersonating = Boolean(session?.session?.impersonatedBy);
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
@@ -373,7 +373,7 @@ export function UsersTable() {
         {userToDelete && (
           <DeleteUserDialog
             isLoading={isRemovingUser}
-            open={!!userToDelete}
+            open={Boolean(userToDelete)}
             onOpenChange={(open) => !open && setUserToDelete(null)}
             onConfirm={() => {
               if (userToDelete) {
@@ -385,7 +385,7 @@ export function UsersTable() {
         {userToEdit && (
           <EditUserDialog
             user={userToEdit}
-            open={!!userToEdit}
+            open={Boolean(userToEdit)}
             onOpenChange={(open) => !open && setUserToEdit(null)}
             onSuccess={() => refetch()}
           />
@@ -394,7 +394,7 @@ export function UsersTable() {
           <BanUserDialog
             userId={userToBan?.id ?? null}
             userEmail={userToBan?.email}
-            open={!!userToBan}
+            open={Boolean(userToBan)}
             onOpenChange={(open) => !open && setUserToBan(null)}
             onSuccess={() => refetch()}
           />

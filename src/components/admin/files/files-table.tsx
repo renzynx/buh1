@@ -158,7 +158,7 @@ export function FilesTable() {
   const selectedIds = Object.keys(rowSelection).filter((k) => rowSelection[k]);
   const mappedSelectedIds = selectedIds
     .map((index) => data?.items[parseInt(index, 10)]?.id)
-    .filter((id): id is string => !!id);
+    .filter((id): id is string => Boolean(id));
 
   const pageCount = data?.pageCount ?? 0;
   const currentPageNum = pageIndex + 1;

@@ -129,7 +129,7 @@ export function FilesGrid({
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {files.map((f) => {
-            const checked = !!rowSelection[f.id];
+            const checked = Boolean(rowSelection[f.id]);
             return (
               <div
                 key={f.id}
