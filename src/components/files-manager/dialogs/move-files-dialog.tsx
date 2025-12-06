@@ -1,7 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FolderSelector } from "@/components/uploader/folder-selector";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FolderSelector } from "@/components/uploader/folder-selector";
 import { useTRPC } from "@/trpc/client";
 
 interface MoveFilesDialogProps {
@@ -26,6 +26,7 @@ export function MoveFilesDialog({
 }: MoveFilesDialogProps) {
   const trpc = useTRPC();
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation(
     trpc.user.moveFiles.mutationOptions({
@@ -35,6 +36,12 @@ export function MoveFilesDialog({
             data.movedCount === 1 ? "" : "s"
           }`,
         );
+
+        queryClient.invalidateQueries({
+          queryKey: trpc.user.getFiles.queryKey(),
+          exact: false,
+        });
+
         onMoved();
       },
       onError: (error) => {
@@ -62,7 +69,7 @@ export function MoveFilesDialog({
         </DialogHeader>
 
         <div className="py-4">
-            <FolderSelector value={targetFolderId} onChange={setTargetFolderId} />
+          <FolderSelector value={targetFolderId} onChange={setTargetFolderId} />
         </div>
 
         <DialogFooter>

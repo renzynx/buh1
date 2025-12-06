@@ -6,6 +6,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { useDndContext } from "./dnd-context";
 
 export type BreadcrumbItem = {
   id: string | null;
@@ -19,6 +21,14 @@ export function FolderBreadcrumb({
   items: BreadcrumbItem[];
   onNavigate: (folderId: string | null) => void;
 }) {
+  const {
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    dropTargetId,
+    isDragging,
+  } = useDndContext();
+
   // If there are many items, collapse the middle ones into a dropdown.
   const MAX_VISIBLE = 4; // show up to this many breadcrumb items (excluding Home)
 
@@ -32,13 +42,21 @@ export function FolderBreadcrumb({
   const collapsedItems =
     items.length > MAX_VISIBLE ? items.slice(1, items.length - 2) : [];
 
+  const isHomeDropTarget = dropTargetId === null && isDragging;
+
   return (
     <div className="flex items-center gap-1 overflow-x-auto pb-2">
       <Button
         variant="ghost"
         size="sm"
         onClick={() => onNavigate(null)}
-        className="gap-2"
+        onDragOver={(e) => handleDragOver(e, null)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, null)}
+        className={cn(
+          "gap-2 transition-all",
+          isHomeDropTarget && "ring-2 ring-primary bg-primary/10",
+        )}
       >
         <Home className="size-4" />
         <span>Home</span>
@@ -51,6 +69,9 @@ export function FolderBreadcrumb({
           index === 1 &&
           collapsedItems.length > 0 &&
           items.length > MAX_VISIBLE;
+
+        const isDropTarget = dropTargetId === item.id && isDragging;
+        const isLastItem = index === visible.length - 1;
 
         return (
           <div
@@ -83,8 +104,14 @@ export function FolderBreadcrumb({
                   variant="ghost"
                   size="sm"
                   onClick={() => onNavigate(item.id)}
-                  className="gap-2"
-                  disabled={index === visible.length - 1}
+                  onDragOver={(e) => !isLastItem && handleDragOver(e, item.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => !isLastItem && handleDrop(e, item.id)}
+                  className={cn(
+                    "gap-2 transition-all",
+                    isDropTarget && "ring-2 ring-primary bg-primary/10",
+                  )}
+                  disabled={isLastItem}
                 >
                   <Folder className="size-4" />
                   <span>{item.name}</span>
@@ -95,8 +122,14 @@ export function FolderBreadcrumb({
                 variant="ghost"
                 size="sm"
                 onClick={() => onNavigate(item.id)}
-                className="gap-2"
-                disabled={index === visible.length - 1}
+                onDragOver={(e) => !isLastItem && handleDragOver(e, item.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => !isLastItem && handleDrop(e, item.id)}
+                className={cn(
+                  "gap-2 transition-all",
+                  isDropTarget && "ring-2 ring-primary bg-primary/10",
+                )}
+                disabled={isLastItem}
               >
                 <Folder className="size-4" />
                 <span>{item.name}</span>

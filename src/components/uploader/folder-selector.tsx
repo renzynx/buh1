@@ -1,10 +1,14 @@
 import { skipToken, useQueries, useQuery } from "@tanstack/react-query";
-import { ChevronsUpDown, CircleQuestionMark, Folder } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  FolderIcon,
+  FolderOpen,
+  Home,
+  Search,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -13,19 +17,25 @@ import {
 import type { DatabaseFolders } from "@/database/schema";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Spinner } from "../ui/spinner";
 
 interface FolderSelectorProps {
   value: string | null;
   onChange: (folderId: string | null) => void;
+  label?: string;
 }
 
-export function FolderSelector({ value, onChange }: FolderSelectorProps) {
+export function FolderSelector({
+  value,
+  onChange,
+  label = "Destination folder",
+}: FolderSelectorProps) {
   const trpc = useTRPC();
   const [open, setOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
-  const [{ data: rootData }, { data: selectedFolder }] = useQueries({
+
+  const [{ data: rootData, isLoading }, { data: selectedFolder }] = useQueries({
     queries: [
       trpc.user.getFolders.queryOptions({ page: 1, pageSize: 1000 }),
       trpc.user.getFolder.queryOptions(value ? { id: value } : skipToken),
@@ -48,19 +58,19 @@ export function FolderSelector({ value, onChange }: FolderSelectorProps) {
     }
   }, [selectedFolder]);
 
+  // Build breadcrumb path for selected folder
+  const breadcrumbPath = useMemo(() => {
+    if (!selectedFolder) return null;
+    const ancestors = selectedFolder.ancestors ?? [];
+    return [...ancestors, { id: selectedFolder.id, name: selectedFolder.name }];
+  }, [selectedFolder]);
+
   return (
-    <div className="space-y-2">
-      <Label className="mb-2 flex items-center gap-2">
-        Select a folder (Optional)
-        <Tooltip>
-          <TooltipTrigger>
-            <CircleQuestionMark className="size-4 opacity-50 hover:opacity-100" />
-          </TooltipTrigger>
-          <TooltipContent>
-            You can select a folder to upload files to.
-          </TooltipContent>
-        </Tooltip>
-      </Label>
+    <div className="space-y-1.5">
+      {label && (
+        // biome-ignore lint/a11y/noLabelWithoutControl: <idc>
+        <label className="text-sm font-medium text-foreground">{label}</label>
+      )}
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -68,67 +78,114 @@ export function FolderSelector({ value, onChange }: FolderSelectorProps) {
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between"
+            className="w-full justify-start gap-2 h-auto min-h-10 py-2"
           >
-            <div className="flex items-center gap-2 truncate">
-              <Folder className="size-4 shrink-0" />
-              <span className="truncate">
-                {value === null
-                  ? "Root"
-                  : selectedFolder?.name || "Select folder..."}
-              </span>
-            </div>
-            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+            {value === null ? (
+              <>
+                <Home className="size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">Root folder</span>
+              </>
+            ) : selectedFolder ? (
+              <div className="flex items-center gap-2 min-w-0">
+                <FolderIcon className="size-4 shrink-0 text-blue-500" />
+                <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                  {breadcrumbPath && breadcrumbPath.length > 2 && (
+                    <>
+                      <span className="text-muted-foreground text-xs">
+                        .../
+                      </span>
+                    </>
+                  )}
+                  {breadcrumbPath?.slice(-2).map((item, idx, arr) => (
+                    <span key={item.id} className="flex items-center gap-1">
+                      <span
+                        className={cn(
+                          "truncate",
+                          idx === arr.length - 1
+                            ? "font-medium"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {item.name}
+                      </span>
+                      {idx < arr.length - 1 && (
+                        <ChevronRight className="size-3 text-muted-foreground shrink-0" />
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">Select folder...</span>
+            )}
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-[400px] p-2" align="start">
-          <div className="mb-2">
-            <Input
+        <PopoverContent className="w-[320px] p-0" align="start">
+          {/* Search header */}
+          <div className="flex items-center gap-2 border-b px-3 py-2">
+            <Search className="size-4 shrink-0 text-muted-foreground" />
+            <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search folder..."
+              placeholder="Search folders..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
 
-          <div className="max-h-[400px] overflow-auto">
-            {/* Root option */}
-            <div className="mb-1">
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted transition-colors">
-                <Checkbox
-                  checked={value === null}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      onChange(null);
-                      setOpen(false);
-                    }
-                  }}
-                />
-                <Folder className="size-4 shrink-0 text-gray-500" />
-                <span className={cn(value === null && "font-semibold")}>
-                  Root
-                </span>
+          {/* Folder tree */}
+          <div className="max-h-[300px] overflow-y-auto p-1">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner className="size-5" />
               </div>
-            </div>
-
-            {/* Tree nodes */}
-            <div>
-              {treeRoots.map((root) => (
-                <TreeNode
-                  key={root.id}
-                  node={root}
-                  depth={0}
-                  expandedIds={expandedIds}
-                  setExpandedIds={setExpandedIds}
-                  onSelect={(id: string) => {
-                    onChange(id);
+            ) : (
+              <>
+                {/* Root option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(null);
                     setOpen(false);
                   }}
-                  value={value}
-                  query={query}
-                />
-              ))}
-            </div>
+                  className={cn(
+                    "w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
+                    "hover:bg-accent",
+                    value === null && "bg-accent",
+                  )}
+                >
+                  <span className="size-4" /> {/* Spacer for alignment */}
+                  <Home className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 text-left">Root folder</span>
+                  {value === null && (
+                    <Check className="size-4 shrink-0 text-primary" />
+                  )}
+                </button>
+
+                {/* Tree nodes */}
+                {treeRoots.length === 0 && !isLoading && (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    No folders found
+                  </div>
+                )}
+
+                {treeRoots.map((root) => (
+                  <TreeNode
+                    key={root.id}
+                    node={root}
+                    depth={0}
+                    expandedIds={expandedIds}
+                    setExpandedIds={setExpandedIds}
+                    onSelect={(id: string) => {
+                      onChange(id);
+                      setOpen(false);
+                    }}
+                    value={value}
+                    query={query}
+                  />
+                ))}
+              </>
+            )}
           </div>
         </PopoverContent>
       </Popover>
@@ -158,14 +215,13 @@ function TreeNode({
   const trpc = useTRPC();
   const isExpanded = Boolean(expandedIds[node.id]);
   const isSelected = value === node.id;
-  const [isToggling, setIsToggling] = useState(false);
 
   // Query matching
   const normalizedQuery = query.toLowerCase().trim();
   const matchesQuery =
     normalizedQuery === "" || node.name.toLowerCase().includes(normalizedQuery);
 
-  const { data: childrenData } = useQuery(
+  const { data: childrenData, isLoading: isLoadingChildren } = useQuery(
     trpc.user.getFolders.queryOptions(
       isExpanded
         ? {
@@ -175,7 +231,7 @@ function TreeNode({
           }
         : skipToken,
       {
-        staleTime: Infinity,
+        staleTime: Number.POSITIVE_INFINITY,
       },
     ),
   );
@@ -208,73 +264,100 @@ function TreeNode({
     return null;
   }
 
-  const toggleExpand = () => {
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setExpandedIds((prev) => ({ ...prev, [node.id]: !prev[node.id] }));
   };
+
+  const FolderIconComponent = isExpanded ? FolderOpen : FolderIcon;
 
   return (
     <div>
       <div
-        className="flex items-center gap-1 px-2 py-1.5 rounded hover:bg-muted transition-colors group"
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        className={cn(
+          "flex items-center gap-1 rounded-md text-sm transition-colors",
+          "hover:bg-accent",
+          isSelected && "bg-accent",
+        )}
+        style={{ paddingLeft: `${depth * 12 + 4}px` }}
       >
-        {/* (No chevron) keep a same-size spacer for alignment */}
-        <span className="p-0.5 rounded flex items-center justify-center shrink-0 size-4" />
-
-        {/* Checkbox for selection */}
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={(checked) => {
-            if (checked) {
-              onSelect(node.id);
-            }
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
-
-        {/* Folder item - clicking toggles expansion; checkbox is for selecting */}
+        {/* Expand/collapse button */}
         <button
-          className="flex-1 text-left flex items-center gap-2 min-w-0 cursor-pointer"
-          aria-disabled={isToggling}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isToggling) return;
-            setIsToggling(true);
-            // Toggle and prevent rapid repeated toggles for a short period
-            toggleExpand();
-            setTimeout(() => setIsToggling(false), 350);
-          }}
+          type="button"
+          onClick={toggleExpand}
+          className={cn(
+            "size-6 flex items-center justify-center rounded hover:bg-muted shrink-0",
+            "transition-transform duration-200",
+          )}
         >
-          <Folder className="size-4 shrink-0 text-blue-500" />
+          {isLoadingChildren ? (
+            <Spinner className="size-3" />
+          ) : (
+            <ChevronRight
+              className={cn(
+                "size-4 text-muted-foreground transition-transform duration-200",
+                isExpanded && "rotate-90",
+              )}
+            />
+          )}
+        </button>
+
+        {/* Folder item */}
+        <button
+          type="button"
+          onClick={() => onSelect(node.id)}
+          className="flex-1 flex items-center gap-2 py-2 pr-2 min-w-0"
+        >
+          <FolderIconComponent
+            className={cn(
+              "size-4 shrink-0",
+              isExpanded ? "text-blue-500" : "text-blue-400",
+            )}
+          />
           <span
             className={cn(
-              "truncate",
-              isSelected && "font-semibold",
+              "truncate flex-1 text-left",
+              isSelected && "font-medium",
               matchesQuery &&
                 normalizedQuery !== "" &&
-                "bg-yellow-100 dark:bg-yellow-900/30",
+                "bg-yellow-200/50 dark:bg-yellow-500/20 rounded px-0.5",
             )}
           >
             {node.name}
           </span>
+          {isSelected && <Check className="size-4 shrink-0 text-primary" />}
         </button>
       </div>
 
       {/* Children */}
-      {isExpanded && hasChildren && (
-        <div>
-          {children.map((child) => (
-            <TreeNode
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              expandedIds={expandedIds}
-              setExpandedIds={setExpandedIds}
-              onSelect={onSelect}
-              value={value}
-              query={query}
-            />
-          ))}
+      {isExpanded && (
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-200",
+            isExpanded ? "opacity-100" : "opacity-0",
+          )}
+        >
+          {hasChildren ? (
+            children.map((child) => (
+              <TreeNode
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                expandedIds={expandedIds}
+                setExpandedIds={setExpandedIds}
+                onSelect={onSelect}
+                value={value}
+                query={query}
+              />
+            ))
+          ) : !isLoadingChildren ? (
+            <div
+              className="text-xs text-muted-foreground py-1.5"
+              style={{ paddingLeft: `${(depth + 1) * 12 + 32}px` }}
+            >
+              No subfolders
+            </div>
+          ) : null}
         </div>
       )}
     </div>

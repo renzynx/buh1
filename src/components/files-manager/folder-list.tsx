@@ -1,4 +1,12 @@
-import { Folder, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Folder,
+  GripVertical,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +16,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { DatabaseFolders } from "@/database/schema";
+import { cn } from "@/lib/utils";
 import { LoadingToast } from "../loading-toast";
+import { useDndContext } from "./dnd-context";
 
 const DeleteFolderDialog = lazy(() =>
   import("./dialogs/delete-folder-dialog").then((module) => ({
@@ -20,8 +30,6 @@ const RenameFolderDialog = lazy(() =>
     default: module.RenameFolderDialog,
   })),
 );
-
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function FolderList({
   folders,
@@ -46,6 +54,15 @@ export function FolderList({
   const [deleteFolder, setDeleteFolder] = useState<DatabaseFolders | null>(
     null,
   );
+  const {
+    handleDragStart,
+    handleDragEnd,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    dropTargetId,
+    isDragging,
+  } = useDndContext();
 
   if (folders.length === 0 && page === 1) {
     return null;
@@ -83,48 +100,66 @@ export function FolderList({
           )}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {folders.map((folder) => (
-            <div
-              key={folder.id}
-              className="group relative flex items-center gap-2 rounded-lg border p-3 hover:bg-accent"
-            >
-              <button
-                type="button"
-                onClick={() => onNavigate(folder.id)}
-                className="flex flex-1 items-center gap-2 overflow-hidden cursor-pointer"
-              >
-                <Folder className="size-5 shrink-0 text-blue-500" />
-                <span className="truncate text-sm font-medium">
-                  {folder.name}
-                </span>
-              </button>
+          {folders.map((folder) => {
+            const isDropTarget = dropTargetId === folder.id;
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
-                  >
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setRenameFolder(folder)}>
-                    <Pencil className="mr-2 size-4" />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setDeleteFolder(folder)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="mr-2 size-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
+            return (
+              <div
+                key={folder.id}
+                draggable
+                onDragStart={(e) =>
+                  handleDragStart(e, { type: "folder", ids: [folder.id] })
+                }
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOver(e, folder.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, folder.id)}
+                className={cn(
+                  "group relative flex items-center gap-2 rounded-lg border p-3 hover:bg-accent cursor-grab active:cursor-grabbing transition-all",
+                  isDropTarget &&
+                    "ring-2 ring-primary bg-primary/10 border-primary",
+                  isDragging && !isDropTarget && "opacity-50",
+                )}
+              >
+                <GripVertical className="size-4 shrink-0 text-muted-foreground" />
+                <button
+                  type="button"
+                  onClick={() => onNavigate(folder.id)}
+                  className="flex flex-1 items-center gap-2 overflow-hidden cursor-pointer"
+                >
+                  <Folder className="size-5 shrink-0 text-blue-500" />
+                  <span className="truncate text-sm font-medium">
+                    {folder.name}
+                  </span>
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+                    >
+                      <MoreVertical className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setRenameFolder(folder)}>
+                      <Pencil className="mr-2 size-4" />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setDeleteFolder(folder)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="mr-2 size-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          })}
         </div>
       </div>
 

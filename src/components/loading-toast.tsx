@@ -1,13 +1,9 @@
-import { useEffect } from "react";
-import { toast } from "sonner";
+import { Spinner } from "./ui/spinner";
 
 export function LoadingToast() {
-  useEffect(() => {
-    const toastId = toast.loading("Loading...");
-    return () => {
-      toast.dismiss(toastId);
-    };
-  }, []);
-
-  return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <Spinner className="size-8" />
+    </div>
+  );
 }

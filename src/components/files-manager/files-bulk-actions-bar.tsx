@@ -1,4 +1,4 @@
-import { Download, Trash2 } from "lucide-react";
+import { Download, FolderInput, Trash2 } from "lucide-react";
 import React, { lazy, Suspense } from "react";
 import { LoadingToast } from "../loading-toast";
 import { Button } from "../ui/button";
@@ -73,6 +73,7 @@ export function FilesBulkActionsBar({
               disabled={selectedIds.length === 0}
               onClick={() => setMoveIds(selectedIds)}
             >
+              <FolderInput className="mr-2 size-4" />
               <span>Move</span>
             </Button>
             <Button

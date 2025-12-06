@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { navigate } from "vike/client/router";
@@ -34,6 +35,7 @@ export function SignUpForm({ redirectTo = "/dashboard" }: SignUpFormProps) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState("");
+  const queryClient = useQueryClient();
 
   const form = useAppForm({
     defaultValues: {
@@ -70,6 +72,8 @@ export function SignUpForm({ redirectTo = "/dashboard" }: SignUpFormProps) {
           setIsLoading(false);
           return;
         }
+
+        queryClient.clear();
 
         // Successful sign up
         await navigate(redirectTo);

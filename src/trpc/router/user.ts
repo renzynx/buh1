@@ -678,4 +678,96 @@ export const userRouter = router({
 
       return updated;
     }),
+
+  moveFolder: authenticatedProcedure
+    .input(
+      z.object({
+        folderId: z.string(),
+        targetParentId: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ input: { folderId, targetParentId }, ctx }) => {
+      // Get the folder to move
+      const [folder] = await ctx.db
+        .select()
+        .from(schema.folders)
+        .where(eq(schema.folders.id, folderId));
+
+      if (!folder) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Folder not found",
+        });
+      }
+
+      if (folder.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to move this folder",
+        });
+      }
+
+      // Cannot move folder into itself
+      if (folderId === targetParentId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot move a folder into itself",
+        });
+      }
+
+      // Validate target parent if not null (moving to root)
+      if (targetParentId) {
+        const [targetFolder] = await ctx.db
+          .select()
+          .from(schema.folders)
+          .where(eq(schema.folders.id, targetParentId));
+
+        if (!targetFolder) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Target folder not found",
+          });
+        }
+
+        if (targetFolder.userId !== ctx.session.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You don't have permission to move to this folder",
+          });
+        }
+
+        // Prevent moving folder into its own descendant (circular reference)
+        // Walk up the parent chain from targetParentId to check
+        let currentParentId: string | null = targetParentId;
+        const visited = new Set<string>();
+
+        while (currentParentId) {
+          if (currentParentId === folderId) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Cannot move a folder into its own subfolder",
+            });
+          }
+
+          if (visited.has(currentParentId)) break; // Prevent infinite loop
+          visited.add(currentParentId);
+
+          const [parent] = await ctx.db
+            .select({ parentId: schema.folders.parentId })
+            .from(schema.folders)
+            .where(eq(schema.folders.id, currentParentId));
+
+          currentParentId = parent?.parentId ?? null;
+        }
+      }
+
+      // Update the folder's parentId
+      const [updated] = await ctx.db
+        .update(schema.folders)
+        .set({ parentId: targetParentId })
+        .where(eq(schema.folders.id, folderId))
+        .returning();
+
+      return updated;
+    }),
 });

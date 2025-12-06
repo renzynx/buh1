@@ -1,4 +1,4 @@
-import { Download, Eye, Share2, Trash2 } from "lucide-react";
+import { Download, Eye, FolderInput, Share2, Trash2 } from "lucide-react";
 import type { FileRow } from "@/lib/types";
 import { useSettings } from "@/stores/settings-store";
 import { Button } from "../ui/button";
@@ -9,11 +9,13 @@ export function FileActions({
   onDelete,
   onPreview,
   onShare,
+  onMove,
 }: {
   file: FileRow;
   onDelete: (ids: string[]) => void;
   onPreview?: (file: FileRow) => void;
   onShare?: (file: FileRow) => void;
+  onMove?: (ids: string[]) => void;
 }) {
   const { settings } = useSettings();
 
@@ -56,6 +58,19 @@ export function FileActions({
           </Button>
         </TooltipTrigger>
         <TooltipContent>Share</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => file.id && onMove?.([file.id])}
+          >
+            <FolderInput />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Move</TooltipContent>
       </Tooltip>
 
       <Tooltip>

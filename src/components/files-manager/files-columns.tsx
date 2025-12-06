@@ -13,6 +13,7 @@ export type GetColumnsOptions = {
   setDeleteFileIds: (ids: string[]) => void;
   setPreviewFile: (f: FileRow | null) => void;
   setShareFile: (f: FileRow | null) => void;
+  setMoveFileIds: (ids: string[]) => void;
 };
 
 export function getColumns({
@@ -22,6 +23,7 @@ export function getColumns({
   setDeleteFileIds,
   setPreviewFile,
   setShareFile,
+  setMoveFileIds,
 }: GetColumnsOptions): ColumnDef<FileRow, unknown>[] {
   return [
     {
@@ -101,6 +103,7 @@ export function getColumns({
           onDelete={(ids) => setDeleteFileIds(ids)}
           onPreview={(f) => setPreviewFile(f)}
           onShare={(f) => setShareFile(f)}
+          onMove={(ids) => setMoveFileIds(ids)}
         />
       ),
     },

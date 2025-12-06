@@ -3,6 +3,7 @@ import { LayoutGrid, LayoutList, RefreshCcw, Upload } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useData } from "vike-react/useData";
+import { DndProvider } from "@/components/files-manager/dnd-context";
 import { FilesGrid } from "@/components/files-manager/files-grid";
 import { FilesTable } from "@/components/files-manager/files-table";
 import { FilesTableSkeleton } from "@/components/files-manager/files-table-skeleton";
@@ -158,107 +159,109 @@ export default function Page() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Files Manager</h1>
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <a href="/dashboard/uploads">
-              <Upload className="mr-2 size-4" />
-              Upload
-            </a>
-          </Button>
-          <Suspense fallback={<Button isLoading />}>
-            <NewFolderDialog
-              className="w-full sm:w-auto"
-              parentId={currentFolderId}
-              onSuccess={handleFolderUpdate}
+    <DndProvider>
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">Files Manager</h1>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              <a href="/dashboard/uploads">
+                <Upload className="mr-2 size-4" />
+                Upload
+              </a>
+            </Button>
+            <Suspense fallback={<Button isLoading />}>
+              <NewFolderDialog
+                className="w-full sm:w-auto"
+                parentId={currentFolderId}
+                onSuccess={handleFolderUpdate}
+              />
+            </Suspense>
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="col-span-2 w-full sm:col-span-1 sm:w-auto"
+            >
+              <RefreshCcw
+                className={cn("mr-2 size-4", isRefreshing && "animate-spin")}
+              />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <FolderBreadcrumb
+            items={breadcrumbs}
+            onNavigate={handleFolderNavigate}
+          />
+
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label="Table view"
+                  aria-pressed={viewMode === "table"}
+                  className={cn(
+                    "transition-transform",
+                    viewMode === "table" && "ring-2 ring-primary scale-105",
+                  )}
+                  variant={viewMode === "table" ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setViewMode("table")}
+                >
+                  <LayoutList className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Table view</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === "grid"}
+                  className={cn(
+                    "transition-transform",
+                    viewMode === "grid" && "ring-2 ring-primary scale-105",
+                  )}
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <LayoutGrid className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Grid view</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        <FolderList
+          folders={foldersData?.items ?? []}
+          total={foldersData?.total ?? 0}
+          page={foldersData?.page ?? 1}
+          pageCount={foldersData?.pageCount ?? 1}
+          onPageChange={setFolderPage}
+          onNavigate={handleFolderNavigate}
+          onUpdate={handleFolderUpdate}
+        />
+
+        {viewMode === "table" ? (
+          <Suspense fallback={<FilesTableSkeleton />}>
+            <FilesTable
+              initialData={isInitialDataRelevant ? data.files : undefined}
+              currentFolderId={currentFolderId}
             />
           </Suspense>
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="col-span-2 w-full sm:col-span-1 sm:w-auto"
-          >
-            <RefreshCcw
-              className={cn("mr-2 size-4", isRefreshing && "animate-spin")}
-            />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <FolderBreadcrumb
-          items={breadcrumbs}
-          onNavigate={handleFolderNavigate}
-        />
-
-        <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label="Table view"
-                aria-pressed={viewMode === "table"}
-                className={cn(
-                  "transition-transform",
-                  viewMode === "table" && "ring-2 ring-primary scale-105",
-                )}
-                variant={viewMode === "table" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setViewMode("table")}
-              >
-                <LayoutList className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Table view</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label="Grid view"
-                aria-pressed={viewMode === "grid"}
-                className={cn(
-                  "transition-transform",
-                  viewMode === "grid" && "ring-2 ring-primary scale-105",
-                )}
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setViewMode("grid")}
-              >
-                <LayoutGrid className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Grid view</TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-
-      <FolderList
-        folders={foldersData?.items ?? []}
-        total={foldersData?.total ?? 0}
-        page={foldersData?.page ?? 1}
-        pageCount={foldersData?.pageCount ?? 1}
-        onPageChange={setFolderPage}
-        onNavigate={handleFolderNavigate}
-        onUpdate={handleFolderUpdate}
-      />
-
-      {viewMode === "table" ? (
-        <Suspense fallback={<FilesTableSkeleton />}>
-          <FilesTable
-            initialData={isInitialDataRelevant ? data.files : undefined}
+        ) : (
+          <FilesGrid
             currentFolderId={currentFolderId}
+            initialData={isInitialDataRelevant ? data.files : undefined}
           />
-        </Suspense>
-      ) : (
-        <FilesGrid
-          currentFolderId={currentFolderId}
-          initialData={isInitialDataRelevant ? data.files : undefined}
-        />
-      )}
-    </div>
+        )}
+      </div>
+    </DndProvider>
   );
 }

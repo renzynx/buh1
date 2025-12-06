@@ -13,10 +13,11 @@ import {
   sortingFns,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import React, { lazy, Suspense, useState } from "react";
 import { useQueryParams } from "@/hooks/use-query-params";
 import type { FileRow } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import type { Data } from "@/pages/(main)/dashboard/files-manager/+data";
 import { useTRPC } from "@/trpc/client";
 import { LoadingToast } from "../loading-toast";
@@ -45,6 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { useDndContext } from "./dnd-context";
 import { FilesBulkActionsBar } from "./files-bulk-actions-bar";
 import { getColumns } from "./files-columns";
 
@@ -64,6 +66,11 @@ const ShareFileDialog = lazy(() =>
     default: module.ShareFileDialog,
   })),
 );
+const MoveFilesDialog = lazy(() =>
+  import("./dialogs/move-files-dialog").then((module) => ({
+    default: module.MoveFilesDialog,
+  })),
+);
 
 declare module "@tanstack/react-table" {
   interface FilterMeta {
@@ -80,12 +87,14 @@ export function FilesTable({
 }) {
   const { params, setQueryParams } = useQueryParams();
   const [deleteFileIds, setDeleteFileIds] = useState<string[]>([]);
+  const [moveFileIds, setMoveFileIds] = useState<string[]>([]);
   const [shareFile, setShareFile] = useState<FileRow | null>(null);
   const [previewFile, setPreviewFile] = useState<FileRow | null>(null);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
   const trpc = useTRPC();
+  const { handleDragStart, handleDragEnd, isDragging } = useDndContext();
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
@@ -188,6 +197,7 @@ export function FilesTable({
         setDeleteFileIds,
         setPreviewFile,
         setShareFile,
+        setMoveFileIds,
       }),
     [fuzzySort, rowSelection],
   );
@@ -293,6 +303,16 @@ export function FilesTable({
             onDeleted={() => updateUrl(pageIndex, pageSize, search, sorting)}
           />
         )}
+        {moveFileIds.length > 0 && (
+          <MoveFilesDialog
+            fileIds={moveFileIds}
+            onClose={() => setMoveFileIds([])}
+            onMoved={() => {
+              setMoveFileIds([]);
+              updateUrl(pageIndex, pageSize, search, sorting);
+            }}
+          />
+        )}
         {previewFile && (
           <FilePreviewDialog file={previewFile} setFile={setPreviewFile} />
         )}
@@ -306,6 +326,7 @@ export function FilesTable({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
+                <TableHead className="w-8" />
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} colSpan={header.colSpan}>
                     {header.isPlaceholder ? null : (
@@ -334,15 +355,48 @@ export function FilesTable({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            {table.getRowModel().rows.map((row) => {
+              const file = row.original as FileRow;
+              const isSelected = Boolean(rowSelection[row.id]);
+              // Determine which file IDs to drag: selected files if this file is selected, otherwise just this file
+              const selectedIds = Object.keys(rowSelection).filter(
+                (k) => rowSelection[k],
+              );
+              const dragIds =
+                isSelected && selectedIds.length > 0
+                  ? table
+                      .getRowModel()
+                      .rows.filter((r) => rowSelection[r.id])
+                      .map((r) => (r.original as FileRow).id)
+                  : [file.id];
+
+              return (
+                <TableRow
+                  key={row.id}
+                  draggable
+                  onDragStart={(e) =>
+                    handleDragStart(e, { type: "file", ids: dragIds })
+                  }
+                  onDragEnd={handleDragEnd}
+                  className={cn(
+                    "cursor-grab active:cursor-grabbing",
+                    isDragging && "opacity-50",
+                  )}
+                >
+                  <TableCell className="w-8">
+                    <GripVertical className="size-4 text-muted-foreground" />
                   </TableCell>
-                ))}
-              </TableRow>
-            ))}
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

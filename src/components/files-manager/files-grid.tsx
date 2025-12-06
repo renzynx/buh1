@@ -1,5 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Download, Eye, MoreHorizontal, Share2, Trash2 } from "lucide-react";
+import {
+  Download,
+  Eye,
+  FolderInput,
+  GripVertical,
+  MoreHorizontal,
+  Share2,
+  Trash2,
+} from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,10 +20,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useQueryParams } from "@/hooks/use-query-params";
 import type { FileRow } from "@/lib/types";
-import { formatBytes } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import type { Data } from "@/pages/(main)/dashboard/files-manager/+data";
 import { useTRPC } from "@/trpc/client";
 import { LoadingToast } from "../loading-toast";
+import { useDndContext } from "./dnd-context";
 import { FilesBulkActionsBar } from "./files-bulk-actions-bar";
 
 const DeleteFilesDialog = lazy(() =>
@@ -33,6 +42,11 @@ const ShareFileDialog = lazy(() =>
     default: module.ShareFileDialog,
   })),
 );
+const MoveFilesDialog = lazy(() =>
+  import("./dialogs/move-files-dialog").then((module) => ({
+    default: module.MoveFilesDialog,
+  })),
+);
 
 export function FilesGrid({
   currentFolderId,
@@ -43,6 +57,7 @@ export function FilesGrid({
 }) {
   const { params, setQueryParams } = useQueryParams();
   const trpc = useTRPC();
+  const { handleDragStart, handleDragEnd, isDragging } = useDndContext();
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 20;
@@ -78,6 +93,7 @@ export function FilesGrid({
 
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [deleteFileIds, setDeleteFileIds] = useState<string[]>([]);
+  const [moveFileIds, setMoveFileIds] = useState<string[]>([]);
   const [previewFile, setPreviewFile] = useState<FileRow | null>(null);
   const [shareFile, setShareFile] = useState<FileRow | null>(null);
 
@@ -115,6 +131,17 @@ export function FilesGrid({
           />
         )}
 
+        {moveFileIds.length > 0 && (
+          <MoveFilesDialog
+            fileIds={moveFileIds}
+            onClose={() => setMoveFileIds([])}
+            onMoved={() => {
+              setMoveFileIds([]);
+              updateUrl(pageIndex, pageSize, search);
+            }}
+          />
+        )}
+
         {previewFile && (
           <FilePreviewDialog file={previewFile} setFile={setPreviewFile} />
         )}
@@ -130,23 +157,38 @@ export function FilesGrid({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {files.map((f) => {
             const checked = Boolean(rowSelection[f.id]);
+            // Determine which file IDs to drag: selected files if this file is selected, otherwise just this file
+            const dragIds =
+              checked && selectedIds.length > 0 ? selectedIds : [f.id];
+
             return (
               <div
                 key={f.id}
-                className="rounded border p-3 flex flex-col gap-2 hover:shadow-md"
+                draggable
+                onDragStart={(e) =>
+                  handleDragStart(e, { type: "file", ids: dragIds })
+                }
+                onDragEnd={handleDragEnd}
+                className={cn(
+                  "rounded border p-3 flex flex-col gap-2 hover:shadow-md cursor-grab active:cursor-grabbing transition-opacity",
+                  isDragging && "opacity-50",
+                )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-1 items-center justify-between">
-                    <Checkbox
-                      aria-label={`Select ${f.filename}`}
-                      checked={checked}
-                      onCheckedChange={(v) =>
-                        setRowSelection((prev) => ({
-                          ...prev,
-                          [f.id]: Boolean(v),
-                        }))
-                      }
-                    />
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="size-4 text-muted-foreground" />
+                      <Checkbox
+                        aria-label={`Select ${f.filename}`}
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          setRowSelection((prev) => ({
+                            ...prev,
+                            [f.id]: Boolean(v),
+                          }))
+                        }
+                      />
+                    </div>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -183,6 +225,12 @@ export function FilesGrid({
                         <DropdownMenuItem onClick={() => setShareFile(f)}>
                           <Share2 className="mr-2 h-4 w-4" />
                           Share
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setMoveFileIds([f.id])}
+                        >
+                          <FolderInput className="mr-2 h-4 w-4" />
+                          Move
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
