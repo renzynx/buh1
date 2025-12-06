@@ -227,7 +227,7 @@ export const userRouter = router({
       }
 
       // Get all subfolders recursively
-      const subfolders = (await ctx.db.run(
+      const subfolders = (await ctx.db.all(
         sql`
           WITH RECURSIVE subfolders AS (
             SELECT id FROM ${schema.folders} WHERE id = ${id}
@@ -237,7 +237,7 @@ export const userRouter = router({
           )
           SELECT id FROM subfolders;
         `,
-      )) as unknown as { id: string }[];
+      )) as { id: string }[];
 
       const folderIds = subfolders.map((f) => f.id);
 
