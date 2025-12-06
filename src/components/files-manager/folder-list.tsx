@@ -21,12 +21,22 @@ const RenameFolderDialog = lazy(() =>
   })),
 );
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 export function FolderList({
   folders,
+  total,
+  page,
+  pageCount,
+  onPageChange,
   onNavigate,
   onUpdate,
 }: {
   folders: DatabaseFolders[];
+  total: number;
+  page: number;
+  pageCount: number;
+  onPageChange: (page: number) => void;
   onNavigate: (folderId: string) => void;
   onUpdate: () => void;
 }) {
@@ -37,16 +47,41 @@ export function FolderList({
     null,
   );
 
-  if (folders.length === 0) {
+  if (folders.length === 0 && page === 1) {
     return null;
   }
 
   return (
     <>
       <div className="mb-4">
-        <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-          Folders
-        </h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-muted-foreground">Folders</h3>
+          {pageCount > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-6"
+                disabled={page <= 1}
+                onClick={() => onPageChange(page - 1)}
+              >
+                <ChevronLeft className="size-3" />
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {page} / {pageCount}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-6"
+                disabled={page >= pageCount}
+                onClick={() => onPageChange(page + 1)}
+              >
+                <ChevronRight className="size-3" />
+              </Button>
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {folders.map((folder) => (
             <div

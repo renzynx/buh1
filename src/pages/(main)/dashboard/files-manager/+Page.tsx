@@ -37,6 +37,8 @@ export default function Page() {
   const { params, setQueryParams } = useQueryParams();
   const currentFolderId = params.folderId || null;
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
+  const [folderPage, setFolderPage] = useState(1);
+  const folderPageSize = 20; // Fixed page size for folders
   const trpc = useTRPC();
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
@@ -48,8 +50,9 @@ export default function Page() {
       trpc.user.getFolders.queryOptions(
         {
           parentId: currentFolderId,
-          page: 1,
-          pageSize: 50,
+          page: folderPage,
+          pageSize: folderPageSize,
+          search: params.search,
         },
         {
           initialData: isInitialDataRelevant ? data.folders : undefined,
@@ -72,6 +75,7 @@ export default function Page() {
   useEffect(() => {
     if (!currentFolderId) {
       setBreadcrumbs([]);
+      setFolderPage(1); // Reset page on root navigation
       return;
     }
 
@@ -82,6 +86,7 @@ export default function Page() {
       ];
       setBreadcrumbs(items);
     }
+    setFolderPage(1); // Reset page on folder navigation
   }, [currentFolderId, currentFolder]);
 
   // Persist view mode in localStorage (client-side only)
@@ -233,6 +238,10 @@ export default function Page() {
 
       <FolderList
         folders={foldersData?.items ?? []}
+        total={foldersData?.total ?? 0}
+        page={foldersData?.page ?? 1}
+        pageCount={foldersData?.pageCount ?? 1}
+        onPageChange={setFolderPage}
         onNavigate={handleFolderNavigate}
         onUpdate={handleFolderUpdate}
       />

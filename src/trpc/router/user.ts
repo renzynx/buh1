@@ -226,24 +226,41 @@ export const userRouter = router({
         });
       }
 
-      const folderFiles = await ctx.db
+      // Get all subfolders recursively
+      const subfolders = (await ctx.db.run(
+        sql`
+          WITH RECURSIVE subfolders AS (
+            SELECT id FROM ${schema.folders} WHERE id = ${id}
+            UNION ALL
+            SELECT f.id FROM ${schema.folders} f
+            JOIN subfolders s ON f.parent_id = s.id
+          )
+          SELECT id FROM subfolders;
+        `,
+      )) as unknown as { id: string }[];
+
+      const folderIds = subfolders.map((f) => f.id);
+
+      const filesToDelete = await ctx.db
         .select({ id: schema.files.id, size: schema.files.size })
         .from(schema.files)
-        .where(eq(schema.files.folderId, id));
+        .where(inArray(schema.files.folderId, folderIds));
 
       // Offload file deletion to background
       setImmediate(() => {
-        deleteFilesBackground(folderFiles.map((f) => f.id));
+        deleteFilesBackground(filesToDelete.map((f) => f.id));
       });
 
       await ctx.db.transaction((tx) => {
         tx.update(schema.userQuota)
           .set({
-            usedQuota: sql`MAX(used_quota - ${folderFiles.reduce(
+            usedQuota: sql`MAX(used_quota - ${filesToDelete.reduce(
               (acc, file) => acc + file.size,
               0,
             )}, 0)`,
-            fileCount: sql`MAX(file_count - ${folderFiles.length}, 0)`,
+            fileCount: sql`MAX(file_count - ${
+              filesToDelete.length + folderIds.length
+            }, 0)`,
           })
           .where(eq(schema.userQuota.userId, ctx.session.user.id))
           .run();
@@ -412,14 +429,20 @@ export const userRouter = router({
         parentId: z.string().optional().nullable(),
         page: z.coerce.number().default(1),
         pageSize: z.coerce.number().default(50),
+        search: z.string().optional().default(""),
       }),
     )
-    .query(async ({ input: { parentId, page, pageSize }, ctx }) => {
+    .query(async ({ input: { parentId, page, pageSize, search }, ctx }) => {
+      const searchLower = search.toLowerCase().trim();
+
       const whereClause = and(
         eq(schema.folders.userId, ctx.session.user.id),
         parentId
           ? eq(schema.folders.parentId, parentId)
           : isNull(schema.folders.parentId),
+        searchLower
+          ? sql`LOWER(${schema.folders.name}) LIKE ${`%${searchLower}%`}`
+          : undefined,
       );
 
       const [totalResult] = await ctx.db
@@ -527,6 +550,48 @@ export const userRouter = router({
       },
     ),
 
+  moveFiles: authenticatedProcedure
+    .input(
+      z.object({
+        fileIds: z.array(z.string()),
+        targetFolderId: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ input: { fileIds, targetFolderId }, ctx }) => {
+      if (targetFolderId) {
+        const [targetFolder] = await ctx.db
+          .select()
+          .from(schema.folders)
+          .where(eq(schema.folders.id, targetFolderId));
+
+        if (!targetFolder) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Target folder not found",
+          });
+        }
+        if (targetFolder.userId !== ctx.session.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to move files to this folder",
+          });
+        }
+      }
+
+      const result = await ctx.db
+        .update(schema.files)
+        .set({ folderId: targetFolderId })
+        .where(
+          and(
+            inArray(schema.files.id, fileIds),
+            eq(schema.files.userId, ctx.session.user.id),
+          ),
+        )
+        .run();
+
+      return { success: true, movedCount: result.changes };
+    }),
+
   createFolder: authenticatedProcedure
     .input(
       z.object({
@@ -535,6 +600,24 @@ export const userRouter = router({
       }),
     )
     .mutation(async ({ input: { name, parentId }, ctx }) => {
+      const { getSettings } = await import("@/lib/settings");
+      const settings = await getSettings();
+
+      const userQuota = await ctx.db.query.userQuota.findFirst({
+        where: (userQuota, { eq }) => eq(userQuota.userId, ctx.session.user.id),
+      });
+
+      if (
+        userQuota?.fileCountQuota !== -1 &&
+        (userQuota?.fileCount ?? 0) >=
+          (userQuota?.fileCountQuota ?? settings.defaultUserFileCountQuota)
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You have reached your file/folder limit",
+        });
+      }
+
       if (parentId) {
         const [parentFolder] = await ctx.db
           .select()
@@ -562,6 +645,11 @@ export const userRouter = router({
           parentId: parentId || null,
         })
         .returning();
+
+      await ctx.db
+        .update(schema.userQuota)
+        .set({ fileCount: sql`file_count + 1` })
+        .where(eq(schema.userQuota.userId, ctx.session.user.id));
 
       return folder;
     }),

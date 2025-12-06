@@ -8,6 +8,11 @@ const DeleteFilesDialog = lazy(() =>
     default: module.DeleteFilesDialog,
   })),
 );
+const MoveFilesDialog = lazy(() =>
+  import("./dialogs/move-files-dialog").then((module) => ({
+    default: module.MoveFilesDialog,
+  })),
+);
 
 export function FilesBulkActionsBar({
   selectedIds,
@@ -19,6 +24,7 @@ export function FilesBulkActionsBar({
   onDeleted?: () => void;
 }) {
   const [deleteIds, setDeleteIds] = React.useState<string[]>([]);
+  const [moveIds, setMoveIds] = React.useState<string[]>([]);
 
   return (
     <div className="mb-3">
@@ -62,6 +68,14 @@ export function FilesBulkActionsBar({
               <span>Download</span>
             </Button>
             <Button
+              variant="outline"
+              className="flex-1 md:flex-none"
+              disabled={selectedIds.length === 0}
+              onClick={() => setMoveIds(selectedIds)}
+            >
+              <span>Move</span>
+            </Button>
+            <Button
               variant="destructive"
               className="flex-1 md:flex-none"
               onClick={() => setDeleteIds(selectedIds)}
@@ -86,6 +100,17 @@ export function FilesBulkActionsBar({
       </div>
 
       <Suspense fallback={<LoadingToast />}>
+        {moveIds.length > 0 && (
+          <MoveFilesDialog
+            fileIds={moveIds}
+            onClose={() => setMoveIds([])}
+            onMoved={() => {
+              setMoveIds([]);
+              onClear();
+              onDeleted?.();
+            }}
+          />
+        )}
         {deleteIds.length > 0 && (
           <DeleteFilesDialog
             fileIds={deleteIds}
