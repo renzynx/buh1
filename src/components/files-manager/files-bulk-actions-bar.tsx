@@ -1,6 +1,6 @@
 import { Download, FolderInput, Trash2 } from "lucide-react";
 import React, { lazy, Suspense } from "react";
-import { LoadingToast } from "../loading-toast";
+import { Loading } from "../loading";
 import { Button } from "../ui/button";
 
 const DeleteFilesDialog = lazy(() =>
@@ -100,7 +100,7 @@ export function FilesBulkActionsBar({
         </div>
       </div>
 
-      <Suspense fallback={<LoadingToast />}>
+      <Suspense fallback={<Loading />}>
         {moveIds.length > 0 && (
           <MoveFilesDialog
             fileIds={moveIds}

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useSession } from "@/hooks/use-session";
 import { useTRPC } from "@/trpc/client";
-import { LoadingToast } from "../loading-toast";
+import { Loading } from "../loading";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -73,7 +73,7 @@ export const ApiKeyCard = () => {
       <CardFooter className="flex justify-end">
         {session?.user?.apiKey ? (
           <div className="flex gap-2">
-            <Suspense fallback={<LoadingToast />}>
+            <Suspense fallback={<Loading />}>
               <RemoveApiKeyDialog />
             </Suspense>
 

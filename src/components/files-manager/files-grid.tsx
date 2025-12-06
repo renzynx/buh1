@@ -24,7 +24,7 @@ import { cn, formatBytes } from "@/lib/utils";
 import type { Data } from "@/pages/(main)/dashboard/files-manager/+data";
 import { useTRPC } from "@/trpc/client";
 import { useDnd } from "../../hooks/use-dnd";
-import { LoadingToast } from "../loading-toast";
+import { Loading } from "../loading";
 import { FilesBulkActionsBar } from "./files-bulk-actions-bar";
 
 const DeleteFilesDialog = lazy(() =>
@@ -122,7 +122,7 @@ export function FilesGrid({
         />
       </div>
 
-      <Suspense fallback={<LoadingToast />}>
+      <Suspense fallback={<Loading />}>
         {deleteFileIds.length > 0 && (
           <DeleteFilesDialog
             fileIds={deleteFileIds}

@@ -45,7 +45,7 @@ import { useQueryParams } from "@/hooks/use-query-params";
 import { useSession } from "@/hooks/use-session";
 import { useSettings } from "@/stores/settings-store";
 import { useTRPC } from "@/trpc/client";
-import { LoadingToast } from "../loading-toast";
+import { Loading } from "../loading";
 import {
   getColumns,
   type InviteRow,
@@ -301,7 +301,7 @@ export function InvitesTable() {
         </div>
       </div>
 
-      <Suspense fallback={<LoadingToast />}>
+      <Suspense fallback={<Loading />}>
         {deleteInviteCode && (
           <DeleteInviteDialog
             inviteCode={deleteInviteCode}

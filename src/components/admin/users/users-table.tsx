@@ -43,7 +43,7 @@ import type { DatabaseUser } from "@/database/schema";
 import { useQueryParams } from "@/hooks/use-query-params";
 import { useSession } from "@/hooks/use-session";
 import { authClient } from "@/lib/auth-client";
-import { LoadingToast } from "../../loading-toast";
+import { Loading } from "../../loading";
 import { getColumns } from "./users-columns";
 
 const BanUserDialog = lazy(() =>
@@ -369,7 +369,7 @@ export function UsersTable() {
         </div>
       </div>
 
-      <Suspense fallback={<LoadingToast />}>
+      <Suspense fallback={<Loading />}>
         {userToDelete && (
           <DeleteUserDialog
             isLoading={isRemovingUser}

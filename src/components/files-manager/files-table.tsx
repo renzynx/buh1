@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import type { Data } from "@/pages/(main)/dashboard/files-manager/+data";
 import { useTRPC } from "@/trpc/client";
 import { useDnd } from "../../hooks/use-dnd";
-import { LoadingToast } from "../loading-toast";
+import { Loading } from "../loading";
 import { DebouncedInput } from "../ui/debounced-input";
 import {
   Pagination,
@@ -295,7 +295,7 @@ export function FilesTable({
         onDeleted={() => updateUrl(pageIndex, pageSize, search, sorting)}
       />
 
-      <Suspense fallback={<LoadingToast />}>
+      <Suspense fallback={<Loading />}>
         {deleteFileIds.length > 0 && (
           <DeleteFilesDialog
             fileIds={deleteFileIds}

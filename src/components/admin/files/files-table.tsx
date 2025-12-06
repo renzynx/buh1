@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { LoadingToast } from "@/components/loading-toast";
+import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { DebouncedInput } from "@/components/ui/debounced-input";
 import {
@@ -228,7 +228,7 @@ export function FilesTable() {
         </div>
       </div>
 
-      <Suspense fallback={<LoadingToast />}>
+      <Suspense fallback={<Loading />}>
         {deleteFileIds.length > 0 && (
           <DeleteFilesDialog
             fileIds={deleteFileIds}

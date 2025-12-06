@@ -18,7 +18,7 @@ import {
 import type { DatabaseFolders } from "@/database/schema";
 import { cn } from "@/lib/utils";
 import { useDnd } from "../../hooks/use-dnd";
-import { LoadingToast } from "../loading-toast";
+import { Loading } from "../loading";
 
 const DeleteFolderDialog = lazy(() =>
   import("./dialogs/delete-folder-dialog").then((module) => ({
@@ -33,7 +33,6 @@ const RenameFolderDialog = lazy(() =>
 
 export function FolderList({
   folders,
-  total,
   page,
   pageCount,
   onPageChange,
@@ -163,7 +162,7 @@ export function FolderList({
         </div>
       </div>
 
-      <Suspense fallback={<LoadingToast />}>
+      <Suspense fallback={<Loading />}>
         {renameFolder && (
           <RenameFolderDialog
             folder={renameFolder}
