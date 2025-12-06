@@ -43,7 +43,7 @@ export const ImpersonatingMenu = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="absolute right-6 bottom-6 rounded-full"
+            className="fixed right-6 bottom-6 rounded-full"
             size="icon-lg"
           >
             <BetterAuthIcon />
