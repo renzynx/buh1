@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useDndContext } from "./dnd-context";
+import { useDnd } from "../../hooks/use-dnd";
 
 export type BreadcrumbItem = {
   id: string | null;
@@ -27,7 +27,7 @@ export function FolderBreadcrumb({
     handleDrop,
     dropTargetId,
     isDragging,
-  } = useDndContext();
+  } = useDnd();
 
   // If there are many items, collapse the middle ones into a dropdown.
   const MAX_VISIBLE = 4; // show up to this many breadcrumb items (excluding Home)

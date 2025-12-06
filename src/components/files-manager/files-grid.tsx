@@ -23,8 +23,8 @@ import type { FileRow } from "@/lib/types";
 import { cn, formatBytes } from "@/lib/utils";
 import type { Data } from "@/pages/(main)/dashboard/files-manager/+data";
 import { useTRPC } from "@/trpc/client";
+import { useDnd } from "../../hooks/use-dnd";
 import { LoadingToast } from "../loading-toast";
-import { useDndContext } from "./dnd-context";
 import { FilesBulkActionsBar } from "./files-bulk-actions-bar";
 
 const DeleteFilesDialog = lazy(() =>
@@ -57,7 +57,7 @@ export function FilesGrid({
 }) {
   const { params, setQueryParams } = useQueryParams();
   const trpc = useTRPC();
-  const { handleDragStart, handleDragEnd, isDragging } = useDndContext();
+  const { handleDragStart, handleDragEnd, isDragging } = useDnd();
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 20;

@@ -3,7 +3,6 @@ import { LayoutGrid, LayoutList, RefreshCcw, Upload } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useData } from "vike-react/useData";
-import { DndProvider } from "@/components/files-manager/dnd-context";
 import { FilesGrid } from "@/components/files-manager/files-grid";
 import { FilesTable } from "@/components/files-manager/files-table";
 import { FilesTableSkeleton } from "@/components/files-manager/files-table-skeleton";
@@ -18,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DndProvider } from "@/hooks/use-dnd";
 import { useQueryParams } from "@/hooks/use-query-params";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";

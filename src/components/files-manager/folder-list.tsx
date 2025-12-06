@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { DatabaseFolders } from "@/database/schema";
 import { cn } from "@/lib/utils";
+import { useDnd } from "../../hooks/use-dnd";
 import { LoadingToast } from "../loading-toast";
-import { useDndContext } from "./dnd-context";
 
 const DeleteFolderDialog = lazy(() =>
   import("./dialogs/delete-folder-dialog").then((module) => ({
@@ -62,7 +62,7 @@ export function FolderList({
     handleDrop,
     dropTargetId,
     isDragging,
-  } = useDndContext();
+  } = useDnd();
 
   if (folders.length === 0 && page === 1) {
     return null;

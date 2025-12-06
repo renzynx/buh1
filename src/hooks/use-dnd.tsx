@@ -30,10 +30,10 @@ type DndContextValue = {
 
 const DndContext = createContext<DndContextValue | null>(null);
 
-export function useDndContext() {
+export function useDnd() {
   const context = useContext(DndContext);
   if (!context) {
-    throw new Error("useDndContext must be used within a DndProvider");
+    throw new Error("useDnd must be used within a DndProvider");
   }
   return context;
 }

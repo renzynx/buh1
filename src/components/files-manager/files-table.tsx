@@ -20,6 +20,7 @@ import type { FileRow } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { Data } from "@/pages/(main)/dashboard/files-manager/+data";
 import { useTRPC } from "@/trpc/client";
+import { useDnd } from "../../hooks/use-dnd";
 import { LoadingToast } from "../loading-toast";
 import { DebouncedInput } from "../ui/debounced-input";
 import {
@@ -46,7 +47,6 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { useDndContext } from "./dnd-context";
 import { FilesBulkActionsBar } from "./files-bulk-actions-bar";
 import { getColumns } from "./files-columns";
 
@@ -94,7 +94,7 @@ export function FilesTable({
     [],
   );
   const trpc = useTRPC();
-  const { handleDragStart, handleDragEnd, isDragging } = useDndContext();
+  const { handleDragStart, handleDragEnd, isDragging } = useDnd();
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
