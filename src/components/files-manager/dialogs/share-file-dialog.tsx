@@ -29,7 +29,10 @@ export function ShareFileDialog({
   const shareUrl = `${settings.cdnUrl || baseUrl}/api/f/${file?.encodedId}`;
 
   return (
-    <Dialog open={Boolean(file)} onOpenChange={(open) => !open && setFile(null)}>
+    <Dialog
+      open={Boolean(file)}
+      onOpenChange={(open) => !open && setFile(null)}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share File</DialogTitle>

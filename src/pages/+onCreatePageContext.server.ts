@@ -16,7 +16,19 @@ export async function onCreatePageContext(pageContext: PageContextServer) {
       console.warn(
         "[prerender] Database not available, using default settings",
       );
-      settings = null as unknown as Awaited<ReturnType<typeof getSettings>>;
+      settings = {
+        requireInvite: false,
+        signUpEnabled: true,
+        blacklistedExtensions: "",
+        defaultUserFileCountQuota: 1000,
+        defaultUserQuota: 1024 * 1024 * 1024,
+        maxInviteAge: 1000 * 60 * 60 * 24 * 7,
+        allowUserCreateInvites: true,
+        defaultInvitesQuota: 10,
+        uploadFileChunkSize: 1024 * 1024 * 25,
+        uploadFileMaxSize: 1024 * 1024 * 1024 * 5,
+        cdnUrl: "",
+      };
     }
     session = null;
   } else {
