@@ -128,9 +128,6 @@ importers:
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
-      drizzle-kit:
-        specifier: ^0.31.7
-        version: 0.31.7
       drizzle-orm:
         specifier: ^0.44.7
         version: 0.44.7(@types/better-sqlite3@7.6.13)(better-sqlite3@12.4.6)(kysely@0.28.8)
@@ -228,6 +225,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
+      drizzle-kit:
+        specifier: ^0.31.7
+        version: 0.31.7
       husky:
         specifier: ^9.1.7
         version: 9.1.7
