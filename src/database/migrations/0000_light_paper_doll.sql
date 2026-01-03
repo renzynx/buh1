@@ -1,4 +1,4 @@
-CREATE TABLE `account` (
+CREATE TABLE IF NOT EXISTS `account` (
 	`id` text PRIMARY KEY NOT NULL,
 	`account_id` text NOT NULL,
 	`provider_id` text NOT NULL,
@@ -15,13 +15,13 @@ CREATE TABLE `account` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `account_user_id_idx` ON `account` (`user_id`);--> statement-breakpoint
-CREATE TABLE `config_store` (
+CREATE INDEX IF NOT EXISTS `account_user_id_idx` ON `account` (`user_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `config_store` (
 	`key` text PRIMARY KEY NOT NULL,
 	`value` text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `files` (
+CREATE TABLE IF NOT EXISTS `files` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`folder_id` text,
@@ -35,9 +35,9 @@ CREATE TABLE `files` (
 	FOREIGN KEY (`folder_id`) REFERENCES `folders`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_files_search_text` ON `files` (`search_text`);--> statement-breakpoint
-CREATE INDEX `idx_files_folder_id` ON `files` (`folder_id`);--> statement-breakpoint
-CREATE TABLE `folders` (
+CREATE INDEX IF NOT EXISTS `idx_files_search_text` ON `files` (`search_text`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_files_folder_id` ON `files` (`folder_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `folders` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`name` text NOT NULL,
@@ -48,9 +48,9 @@ CREATE TABLE `folders` (
 	FOREIGN KEY (`parent_id`) REFERENCES `folders`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_folders_user_id` ON `folders` (`user_id`);--> statement-breakpoint
-CREATE INDEX `idx_folders_parent_id` ON `folders` (`parent_id`);--> statement-breakpoint
-CREATE TABLE `invites` (
+CREATE INDEX IF NOT EXISTS `idx_folders_user_id` ON `folders` (`user_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_folders_parent_id` ON `folders` (`parent_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `invites` (
 	`code` text PRIMARY KEY NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`expires_at` integer,
@@ -61,8 +61,8 @@ CREATE TABLE `invites` (
 	FOREIGN KEY (`used_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE INDEX `invites_used_by_idx` ON `invites` (`used_by`);--> statement-breakpoint
-CREATE TABLE `session` (
+CREATE INDEX IF NOT EXISTS `invites_used_by_idx` ON `invites` (`used_by`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `session` (
 	`id` text PRIMARY KEY NOT NULL,
 	`expires_at` integer NOT NULL,
 	`token` text NOT NULL,
@@ -75,10 +75,10 @@ CREATE TABLE `session` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-breakpoint
-CREATE INDEX `session_user_id_idx` ON `session` (`user_id`);--> statement-breakpoint
-CREATE INDEX `session_token_idx` ON `session` (`token`);--> statement-breakpoint
-CREATE TABLE `two_factor` (
+CREATE UNIQUE INDEX IF NOT EXISTS `session_token_unique` ON `session` (`token`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `session_user_id_idx` ON `session` (`user_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `session_token_idx` ON `session` (`token`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `two_factor` (
 	`id` text PRIMARY KEY NOT NULL,
 	`secret` text NOT NULL,
 	`backup_codes` text NOT NULL,
@@ -86,9 +86,9 @@ CREATE TABLE `two_factor` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `two_factor_secret_idx` ON `two_factor` (`secret`);--> statement-breakpoint
-CREATE INDEX `two_factor_user_id_idx` ON `two_factor` (`user_id`);--> statement-breakpoint
-CREATE TABLE `user` (
+CREATE INDEX IF NOT EXISTS `two_factor_secret_idx` ON `two_factor` (`secret`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `two_factor_user_id_idx` ON `two_factor` (`user_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `user` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`email` text NOT NULL,
@@ -104,10 +104,10 @@ CREATE TABLE `user` (
 	`two_factor_enabled` integer DEFAULT false
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
-CREATE UNIQUE INDEX `user_api_key_unique` ON `user` (`api_key`);--> statement-breakpoint
-CREATE INDEX `user_email_idx` ON `user` (`email`);--> statement-breakpoint
-CREATE TABLE `user_quota` (
+CREATE UNIQUE INDEX IF NOT EXISTS `user_email_unique` ON `user` (`email`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `user_api_key_unique` ON `user` (`api_key`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `user_email_idx` ON `user` (`email`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `user_quota` (
 	`user_id` text PRIMARY KEY NOT NULL,
 	`quota` integer DEFAULT 0 NOT NULL,
 	`used_quota` integer DEFAULT 0 NOT NULL,
@@ -119,7 +119,7 @@ CREATE TABLE `user_quota` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `verification` (
+CREATE TABLE IF NOT EXISTS `verification` (
 	`id` text PRIMARY KEY NOT NULL,
 	`identifier` text NOT NULL,
 	`value` text NOT NULL,
@@ -128,4 +128,4 @@ CREATE TABLE `verification` (
 	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);
+CREATE INDEX IF NOT EXISTS `verification_identifier_idx` ON `verification` (`identifier`);
