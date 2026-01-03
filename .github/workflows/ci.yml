@@ -3,8 +3,28 @@ name: CI
 on:
   push:
     branches: [trunk]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "bun.lock"
+      - "tsconfig.json"
+      - "next.config.ts"
+      - "biome.jsonc"
+      - "Dockerfile"
+      - ".github/workflows/**"
   pull_request:
     branches: [trunk]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "bun.lock"
+      - "tsconfig.json"
+      - "next.config.ts"
+      - "biome.jsonc"
+      - "Dockerfile"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 jobs:
