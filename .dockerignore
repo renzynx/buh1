@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.*
+.yarn/*
+
+# Build outputs
+.next
+out
+build
+
+# Database and storage
+*.db*
+/storage/
+/db/
+
+# Environment
+.env*
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+*.md
+!README.md
+LICENSE

@@ -1,0 +1,78 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "formatter": {
+    "indentStyle": "space"
+  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    },
+    "domains": {
+      "react": "recommended"
+    }
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!*.cjs",
+      "!*.js",
+      "!*.mjs",
+      "!*.spec.ts",
+      "!**/*.ts.build-*.mjs",
+      "!dist/*",
+      "!node_modules/*",
+      "!**/.DS_Store",
+      "!src/database/migrations/*"
+    ]
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "**",
+        "!*.cjs",
+        "!*.js",
+        "!*.mjs",
+        "!*.spec.ts",
+        "!**/*.ts.build-*.mjs",
+        "!dist/*",
+        "!node_modules/*",
+        "!**/.DS_Store",
+        "!src/database/migrations/*"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useButtonType": "off",
+            "noStaticElementInteractions": "off",
+            "useKeyWithClickEvents": "off",
+            "noSvgWithoutTitle": "off",
+            "useSemanticElements": "off",
+            "useValidAnchor": "off",
+            "useAriaPropsForRole": "off",
+            "useFocusableInteractive": "off"
+          },
+          "suspicious": {
+            "noArrayIndexKey": "off",
+            "noNonNullAssertedOptionalChain": "off",
+            "noUnknownAtRules": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    }
+  ]
+}
