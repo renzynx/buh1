@@ -17,7 +17,8 @@ import { useTRPC } from "@/trpc/client";
 export function FilesSettingsCard() {
   const trpc = useTRPC();
   const { settings } = useSettings();
-  const router = useRouter(); const revalidate = () => router.refresh();
+  const router = useRouter();
+  const revalidate = () => router.refresh();
 
   const { mutate, isPending } = useMutation(
     trpc.admin.updateSettings.mutationOptions({

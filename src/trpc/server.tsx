@@ -47,7 +47,6 @@ export function HydrateClient(props: { children: React.ReactNode }) {
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: prefetch accepts various query option types
 export function prefetch(queryOptions: {
   queryKey: QueryKey;
   [key: string]: any;

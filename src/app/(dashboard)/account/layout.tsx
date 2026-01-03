@@ -31,7 +31,7 @@ export default function AccountLayout({
                 href="/account/settings"
                 className={cn(
                   "flex items-center gap-2",
-                  currentTab === "settings" && "text-primary"
+                  currentTab === "settings" && "text-primary",
                 )}
               >
                 <Settings className="h-4 w-4" />
@@ -43,7 +43,7 @@ export default function AccountLayout({
                 href="/account/security"
                 className={cn(
                   "flex items-center gap-2",
-                  currentTab === "security" && "text-primary"
+                  currentTab === "security" && "text-primary",
                 )}
               >
                 <ShieldCheck className="h-4 w-4" />

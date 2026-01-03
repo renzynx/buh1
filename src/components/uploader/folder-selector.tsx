@@ -90,11 +90,7 @@ export function FolderSelector({
                 <FolderIcon className="size-4 shrink-0 text-blue-500" />
                 <div className="flex items-center gap-1 min-w-0 overflow-hidden">
                   {breadcrumbPath && breadcrumbPath.length > 2 && (
-                    <>
-                      <span className="text-muted-foreground text-xs">
-                        .../
-                      </span>
-                    </>
+                    <span className="text-muted-foreground text-xs">.../</span>
                   )}
                   {breadcrumbPath?.slice(-2).map((item, idx, arr) => (
                     <span key={item.id} className="flex items-center gap-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 import type { AppSettings } from "@/lib/settings";
 
 export interface RootLoaderData {
@@ -18,7 +18,12 @@ interface SettingsProviderProps {
   appName: string;
 }
 
-export function SettingsProvider({ children, settings, baseUrl, appName }: SettingsProviderProps) {
+export function SettingsProvider({
+  children,
+  settings,
+  baseUrl,
+  appName,
+}: SettingsProviderProps) {
   return (
     <SettingsContext.Provider value={{ settings, baseUrl, appName }}>
       {children}

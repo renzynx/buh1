@@ -1,8 +1,8 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { HydrateClient, prefetchSession } from "@/trpc/server";
 import { DashboardShell } from "./dashboard-shell";
-import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 
 export default async function DashboardGroupLayout({
   children,

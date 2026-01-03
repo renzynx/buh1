@@ -1,7 +1,7 @@
 import { useUploadQueue } from "@/hooks/use-upload-queue";
+import { useUploadStore } from "@/hooks/use-upload-store";
 import { UPLOADER_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { useUploadStore } from "@/hooks/use-upload-store";
 import { FileList } from "./file-list";
 import { UploaderHeader } from "./uploader-header";
 

@@ -1,8 +1,8 @@
 import { Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSettings } from "@/hooks/use-settings";
-import { cn, formatBytes } from "@/lib/utils";
 import { useUploadStore } from "@/hooks/use-upload-store";
+import { cn, formatBytes } from "@/lib/utils";
 
 export const UploadDropzone = () => {
   const [isDragging, setIsDragging] = useState(false);

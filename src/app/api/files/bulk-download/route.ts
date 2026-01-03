@@ -32,7 +32,7 @@ export async function GET(req: Request): Promise<Response> {
   if (ids.length > MAX_BATCH_SIZE) {
     return Response.json(
       { error: `Cannot download more than ${MAX_BATCH_SIZE} files at once` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -58,14 +58,14 @@ export async function GET(req: Request): Promise<Response> {
         } catch {
           return null;
         }
-      })
+      }),
     )
   ).filter((f): f is NonNullable<typeof f> => f !== null);
 
   if (validFiles.length === 0) {
     return Response.json(
       { error: "Files exist in DB but missing on disk" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 

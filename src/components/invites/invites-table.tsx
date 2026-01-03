@@ -42,8 +42,8 @@ import {
 } from "@/components/ui/table";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useQueryParams } from "@/hooks/use-query-params";
-import { useSettings } from "@/hooks/use-settings";
 import { useSession } from "@/hooks/use-session";
+import { useSettings } from "@/hooks/use-settings";
 import { useTRPC } from "@/trpc/client";
 import { Loading } from "../loading";
 import {

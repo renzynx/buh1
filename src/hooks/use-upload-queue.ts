@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef } from "react";
+import { useUploadStore } from "@/hooks/use-upload-store";
 import { UPLOAD_STATUS } from "@/lib/constants";
 import type { UploadControl, UploadStatus } from "@/lib/types";
 import { calculateGlobalProgress } from "@/lib/utils";
-import { useUploadStore } from "@/hooks/use-upload-store";
 
 interface UseUploadQueueOptions {
   files: Array<{ id: string; file: File }>;

@@ -35,7 +35,7 @@ export function AuthCard({
       <Card
         className={cn(
           "relative w-full max-w-md backdrop-blur-sm bg-card/95 shadow-2xl border-border/50",
-          className
+          className,
         )}
       >
         <CardHeader className="space-y-3 text-center pb-6">

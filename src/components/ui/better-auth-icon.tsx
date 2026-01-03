@@ -1,4 +1,4 @@
-'use client';
+"use client";
 export const BetterAuthIcon = (props: React.ComponentProps<"svg">) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

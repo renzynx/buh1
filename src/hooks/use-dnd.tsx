@@ -63,7 +63,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
       onError: (error) => {
         toast.error(error.message || "Failed to move files");
       },
-    })
+    }),
   );
 
   const moveFolderMutation = useMutation(
@@ -82,7 +82,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
       onError: (error) => {
         toast.error(error.message || "Failed to move folder");
       },
-    })
+    }),
   );
 
   const handleDragStart = useCallback((e: React.DragEvent, item: DragItem) => {
@@ -134,7 +134,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
       e.dataTransfer.dropEffect = "move";
       setDropTargetId(targetFolderId);
     },
-    [draggedItem]
+    [draggedItem],
   );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -183,7 +183,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
         // Error handled by mutation
       }
     },
-    [moveFilesMutation, moveFolderMutation]
+    [moveFilesMutation, moveFolderMutation],
   );
 
   return (

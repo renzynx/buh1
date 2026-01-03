@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useTusStore } from "use-tus";
-import { useSettings } from "@/hooks/use-settings";
 import { useSession } from "@/hooks/use-session";
+import { useSettings } from "@/hooks/use-settings";
 import { useUploadStore } from "@/hooks/use-upload-store";
 import { extractError } from "@/lib/utils";
 import { UPLOAD_STATUS, UPLOADER_CONFIG } from "../lib/constants";

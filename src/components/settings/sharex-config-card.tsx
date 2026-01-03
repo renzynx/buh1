@@ -1,6 +1,5 @@
 import { Download, KeyRound, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { useSettings } from "@/hooks/use-settings";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useSession } from "@/hooks/use-session";
+import { useSettings } from "@/hooks/use-settings";
 
 export function ShareXConfigCard() {
   const { data: session } = useSession();

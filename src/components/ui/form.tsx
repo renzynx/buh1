@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { useStore } from "@tanstack/react-form";
 import { format } from "date-fns";
@@ -58,7 +58,7 @@ const Field = React.forwardRef<
         orientation === "responsive" &&
           "sm:grid-cols-[1fr_auto] sm:items-center sm:gap-x-4",
         "data-[invalid=true]:text-destructive",
-        className
+        className,
       )}
       {...props}
     />
@@ -76,7 +76,7 @@ const FieldGroup = React.forwardRef<
       data-slot="field-group"
       className={cn(
         "space-y-4 data-[slot=checkbox-group]:space-y-3",
-        className
+        className,
       )}
       {...props}
     />
@@ -113,7 +113,7 @@ const FieldLegend = React.forwardRef<
         variant === "default" && "text-base font-semibold",
         variant === "label" &&
           "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-        className
+        className,
       )}
       {...props}
     />
@@ -132,7 +132,7 @@ const FieldLabel = React.forwardRef<
       className={cn(
         "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
         "group-data-[invalid=true]/field:text-destructive",
-        className
+        className,
       )}
       {...props}
     />
@@ -429,10 +429,7 @@ export function Checkbox({
         aria-invalid={isInvalid}
       />
       <FieldContent>
-        <FieldLabel
-          htmlFor={field.name}
-          className="font-normal cursor-pointer"
-        >
+        <FieldLabel htmlFor={field.name} className="font-normal cursor-pointer">
           {label}
         </FieldLabel>
         {description && <FieldDescription>{description}</FieldDescription>}
@@ -515,7 +512,7 @@ export function Calendar({
       if (date) {
         const expiresInDays = Math.max(
           0,
-          Math.ceil((date.getTime() - Date.now()) / msPerDay)
+          Math.ceil((date.getTime() - Date.now()) / msPerDay),
         );
         field.handleChange(expiresInDays);
       } else {

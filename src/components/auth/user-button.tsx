@@ -1,8 +1,8 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useSession } from "@/hooks/use-session";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";

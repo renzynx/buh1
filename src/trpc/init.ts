@@ -45,7 +45,7 @@ export const adminProcedure = authenticatedProcedure.use(
     }
 
     return next();
-  }
+  },
 );
 
 export const superAdminProcedure = authenticatedProcedure.use(
@@ -58,5 +58,5 @@ export const superAdminProcedure = authenticatedProcedure.use(
     }
 
     return next();
-  }
+  },
 );

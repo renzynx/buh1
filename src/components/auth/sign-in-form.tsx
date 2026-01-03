@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import * as z from "zod";
 import {
   InputGroup,
@@ -48,13 +48,15 @@ export function SignInForm({ redirectTo = "/dashboard" }: SignInFormProps) {
             callbackURL: redirectTo,
           },
           {
-            onSuccess: async (context: { data: { twoFactorRedirect?: boolean } }) => {
+            onSuccess: async (context: {
+              data: { twoFactorRedirect?: boolean };
+            }) => {
               if (context.data.twoFactorRedirect) {
                 router.push("/auth/two-factor");
                 return;
               }
             },
-          }
+          },
         );
 
         if (error) {

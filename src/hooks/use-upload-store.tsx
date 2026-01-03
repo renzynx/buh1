@@ -2,11 +2,11 @@
 
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useMemo,
   useReducer,
-  type ReactNode,
 } from "react";
 
 export interface UploadRequest {
@@ -142,7 +142,7 @@ function uploadReducer(state: UploadState, action: UploadAction): UploadState {
       const completedIds = new Set(
         Object.entries(state.fileStatuses)
           .filter(([, status]) => status === "completed")
-          .map(([id]) => id)
+          .map(([id]) => id),
       );
 
       return {
@@ -150,21 +150,23 @@ function uploadReducer(state: UploadState, action: UploadAction): UploadState {
         files: state.files.filter((f) => !completedIds.has(f.id)),
         fileStatuses: Object.fromEntries(
           Object.entries(state.fileStatuses).filter(
-            ([k]) => !completedIds.has(k)
-          )
+            ([k]) => !completedIds.has(k),
+          ),
         ),
         fileProgress: Object.fromEntries(
           Object.entries(state.fileProgress).filter(
-            ([k]) => !completedIds.has(k)
-          )
+            ([k]) => !completedIds.has(k),
+          ),
         ),
         fileErrors: Object.fromEntries(
-          Object.entries(state.fileErrors).filter(([k]) => !completedIds.has(k))
+          Object.entries(state.fileErrors).filter(
+            ([k]) => !completedIds.has(k),
+          ),
         ),
         fileStatusCodes: Object.fromEntries(
           Object.entries(state.fileStatusCodes).filter(
-            ([k]) => !completedIds.has(k)
-          )
+            ([k]) => !completedIds.has(k),
+          ),
         ),
       };
     }
@@ -186,7 +188,7 @@ interface UploadContextValue extends UploadState {
   setFileError: (
     fileId: string,
     error: string,
-    statusCode?: number | null
+    statusCode?: number | null,
   ) => void;
   clearFileError: (fileId: string) => void;
   removeFileState: (fileId: string) => void;
@@ -228,7 +230,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     (fileId: string, error: string, statusCode?: number | null) => {
       dispatch({ type: "SET_ERROR", payload: { fileId, error, statusCode } });
     },
-    []
+    [],
   );
 
   const clearFileError = useCallback((fileId: string) => {
@@ -273,7 +275,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       removeFileState,
       clearCompletedFiles,
       setSelectedFolderId,
-    ]
+    ],
   );
 
   return (

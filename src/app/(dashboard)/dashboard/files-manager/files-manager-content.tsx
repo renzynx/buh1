@@ -4,7 +4,7 @@ import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LayoutGrid, LayoutList, RefreshCcw, Upload } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { lazy, Suspense, useEffect, useState, useCallback } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FilesGrid } from "@/components/files-manager/files-grid";
 import { FilesTable } from "@/components/files-manager/files-table";

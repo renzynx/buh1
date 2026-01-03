@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
 
 export interface QueryParams {
   page?: number;
@@ -23,7 +23,8 @@ export function useQueryParams() {
     const pageSize = Number(searchParams.get("pageSize") ?? NaN);
     const search = searchParams.get("search") || searchParams.get("q") || "";
     const sortBy = searchParams.get("sortBy") || undefined;
-    const sortDir = (searchParams.get("sortDir") as "asc" | "desc") || undefined;
+    const sortDir =
+      (searchParams.get("sortDir") as "asc" | "desc") || undefined;
     const folderId = searchParams.get("folderId") || undefined;
     const status = searchParams.get("status") || undefined;
 
@@ -56,7 +57,8 @@ export function useQueryParams() {
 
       if (newParams.sortBy && newParams.sortBy !== "createdAt") {
         newSearchParams.set("sortBy", newParams.sortBy);
-        if (newParams.sortDir) newSearchParams.set("sortDir", newParams.sortDir);
+        if (newParams.sortDir)
+          newSearchParams.set("sortDir", newParams.sortDir);
       } else if (
         newParams.sortBy === "createdAt" &&
         newParams.sortDir === "asc"
@@ -85,7 +87,7 @@ export function useQueryParams() {
         }
       }
     },
-    [pathname, searchParams, router]
+    [pathname, searchParams, router],
   );
 
   return { params, setQueryParams };

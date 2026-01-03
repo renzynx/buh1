@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 
 const protectedRoutes = ["/dashboard", "/admin", "/account"];
 const authRoutes = ["/auth/sign-in", "/auth/sign-up"];
@@ -8,7 +8,7 @@ export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const isProtectedRoute = protectedRoutes.some((route) =>
-    path.startsWith(route)
+    path.startsWith(route),
   );
   const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
 
@@ -24,7 +24,7 @@ export default async function proxy(req: NextRequest) {
     const signInUrl = new URL("/auth/sign-in", req.nextUrl);
     signInUrl.searchParams.set(
       "message",
-      "You must be signed in to access this page!"
+      "You must be signed in to access this page!",
     );
     signInUrl.searchParams.set("redirectTo", path);
     return NextResponse.redirect(signInUrl);

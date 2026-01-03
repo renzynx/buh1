@@ -105,8 +105,8 @@ export const getAnalytics = async (): Promise<AnalyticsData> => {
     .where(
       and(
         sql`${schema.invites.usedAt} IS NULL`,
-        gt(schema.invites.expiresAt, nowDate)
-      )
+        gt(schema.invites.expiresAt, nowDate),
+      ),
     );
   const activeInvites = activeInvitesResult?.count ?? 0;
 
