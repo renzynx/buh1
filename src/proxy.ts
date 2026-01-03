@@ -18,7 +18,8 @@ export default async function proxy(req: NextRequest) {
 
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("__bauth.session_token");
-  const hasSession = !!sessionCookie?.value;
+  const secureSessionCookie = cookieStore.get("__Secure-__bauth.session_token");
+  const hasSession = !!sessionCookie?.value || !!secureSessionCookie?.value;
 
   if (isProtectedRoute && !hasSession) {
     const signInUrl = new URL("/auth/sign-in", req.nextUrl);
