@@ -4,7 +4,6 @@ import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { getSettings } from "@/lib/settings";
 import "./globals.css";
-import { connection } from "next/server";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -31,15 +30,10 @@ export default async function RootLayout({
 }>) {
   const settings = await getSettings();
 
-  await connection();
-
-  const baseUrl = process.env.AUTH_BASE_URL ?? "";
-  const appName = process.env.APP_NAME || "Buh";
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} ${spaceMono.variable} antialiased`}>
-        <Providers settings={settings} baseUrl={baseUrl} appName={appName}>
+        <Providers settings={settings}>
           {children}
           <Toaster position="bottom-center" richColors />
         </Providers>

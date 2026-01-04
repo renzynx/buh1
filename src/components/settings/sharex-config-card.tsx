@@ -14,7 +14,7 @@ import { useSettings } from "@/hooks/use-settings";
 export function ShareXConfigCard() {
   const { data: session } = useSession();
   const apiKey = session?.user?.apiKey;
-  const { baseUrl, appName } = useSettings();
+  const { settings } = useSettings();
 
   const handleDownload = () => {
     if (!apiKey) {
@@ -24,10 +24,10 @@ export function ShareXConfigCard() {
 
     const config = {
       Version: "18.0.1",
-      Name: `${appName} Uploader`,
+      Name: `${settings.appName} Uploader`,
       DestinationType: "ImageUploader, TextUploader, FileUploader",
       RequestMethod: "POST",
-      RequestURL: `${baseUrl}/api/upload-file`,
+      RequestURL: `${settings.baseUrl}/api/upload-file`,
       Headers: {
         "x-api-key": apiKey,
       },
@@ -43,7 +43,7 @@ export function ShareXConfigCard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${appName}-sharex-config.sxcu`;
+    a.download = `${settings.appName}-sharex-config.sxcu`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -93,7 +93,7 @@ export function ShareXConfigCard() {
                 </span>
               </div>
               <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 ml-1">
-                <li>Destination: {appName}</li>
+                <li>Destination: {settings.appName}</li>
                 <li>Method: POST (MultipartFormData)</li>
                 <li>Auth: x-api-key header</li>
               </ul>

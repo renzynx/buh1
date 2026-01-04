@@ -22,10 +22,10 @@ export function ShareFileDialog({
   file: FileRow | null;
   setFile: (file: FileRow | null) => void;
 }) {
-  const { settings, baseUrl } = useSettings();
+  const { settings } = useSettings();
   const { copied, copyToClipboard } = useClipboard();
   const shareUrl = file
-    ? `${settings.cdnUrl || baseUrl}/f/${file.slug}/${encodeURIComponent(file.filename)}`
+    ? `${settings.cdnUrl || settings.baseUrl}/f/${file.slug}/${encodeURIComponent(file.filename)}`
     : "";
 
   return (

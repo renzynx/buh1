@@ -22,7 +22,10 @@ const CONFIG_DEF = {
 type ConfigDef = typeof CONFIG_DEF;
 export type ConfigKey = keyof ConfigDef;
 type ConfigState = z.infer<z.ZodObject<ConfigDef>>;
-export type AppSettings = CamelCaseKeys<ConfigState>;
+export type AppSettings = CamelCaseKeys<ConfigState> & {
+  baseUrl: string;
+  appName: string;
+};
 
 const zShape: Record<string, z.ZodTypeAny> = {};
 const keyMap: Record<string, ConfigKey> = {};
@@ -108,7 +111,11 @@ const fetchSettingsFromDb = async (): Promise<AppSettings> => {
       .execute();
   }
 
-  return finalConfig as AppSettings;
+  return {
+    ...(finalConfig as AppSettings),
+    baseUrl: process.env.AUTH_BASE_URL || "",
+    appName: process.env.APP_NAME || "",
+  };
 };
 
 export const getSettings = unstable_cache(

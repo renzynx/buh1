@@ -11,19 +11,12 @@ import { TRPCReactProvider } from "@/trpc/client";
 interface ProvidersProps {
   children: ReactNode;
   settings: AppSettings;
-  baseUrl: string;
-  appName: string;
 }
 
-export function Providers({
-  children,
-  settings,
-  baseUrl,
-  appName,
-}: ProvidersProps) {
+export function Providers({ children, settings }: ProvidersProps) {
   return (
     <TRPCReactProvider>
-      <SettingsProvider settings={settings} baseUrl={baseUrl} appName={appName}>
+      <SettingsProvider settings={settings}>
         <UploadProvider>
           <TusClientProvider>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
