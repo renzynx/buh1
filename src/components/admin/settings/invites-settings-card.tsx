@@ -15,14 +15,16 @@ import { useTRPC } from "@/trpc/client";
 
 export function InvitesSettingsCard() {
   const trpc = useTRPC();
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const router = useRouter();
-  const revalidate = () => router.refresh();
 
   const { mutate, isPending } = useMutation(
     trpc.admin.updateSettings.mutationOptions({
-      onSuccess: () => {
-        revalidate();
+      onSuccess: (data) => {
+        if (data.settings) {
+          updateSettings(data.settings);
+        }
+        router.refresh();
         toast.success("Invites settings updated successfully");
       },
       onError: (error) => {
