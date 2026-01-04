@@ -51,8 +51,24 @@ export const DEFAULTS = defaults;
 
 export const SETTINGS_CACHE_TAG = "app-settings";
 
+const getDefaultSettings = (): AppSettings => {
+  const defaultConfig: Record<string, unknown> = {};
+  for (const [snakeKey, schema] of Object.entries(CONFIG_DEF)) {
+    const camelKey = snakeToCamel(snakeKey);
+    defaultConfig[camelKey] = (schema as z.ZodTypeAny).parse(undefined);
+  }
+  return defaultConfig as AppSettings;
+};
+
 const fetchSettingsFromDb = async (): Promise<AppSettings> => {
-  const rows = await db.select().from(configStore);
+  let rows: { key: string; value: string }[];
+
+  try {
+    rows = await db.select().from(configStore);
+  } catch {
+    // Database unavailable (e.g., during CI build) - return defaults
+    return getDefaultSettings();
+  }
 
   const finalConfig: Record<string, unknown> = {};
   const rawMap = new Map(rows.map((r) => [r.key, r.value]));
