@@ -15,7 +15,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: "API Key is required" }, { status: 401 });
   }
 
-  const userData = await db
+  const userData = db
     .select({ id: user.id })
     .from(user)
     .where(eq(user.apiKey, apiKey))

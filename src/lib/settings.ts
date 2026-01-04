@@ -16,7 +16,7 @@ const CONFIG_DEF = {
   default_invites_quota: z.number().default(10),
   upload_file_chunk_size: z.number().default(1024 * 1024 * 25),
   upload_file_max_size: z.number().default(1024 * 1024 * 1024 * 5),
-  cdn_url: z.url().default(""),
+  cdn_url: z.url().or(z.literal("")).default(""),
 };
 
 type ConfigDef = typeof CONFIG_DEF;

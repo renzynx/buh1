@@ -3,7 +3,13 @@
 import { ChevronsLeft, ChevronsRight, InfinityIcon, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -78,19 +84,18 @@ type SidebarProps = {
   defaultUserQuota?: number;
 };
 
-function SidebarLink({
-  item,
-  collapsed,
-  isActive,
-  useTooltips,
-}: {
-  item: NavItem;
-  collapsed?: boolean;
-  isActive: boolean;
-  useTooltips?: boolean;
-}) {
+const SidebarLink = forwardRef<
+  HTMLAnchorElement,
+  {
+    item: NavItem;
+    collapsed?: boolean;
+    isActive: boolean;
+    useTooltips?: boolean;
+  } & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href">
+>(({ item, collapsed, isActive, useTooltips, ...props }, ref) => {
   const link = (
     <Link
+      ref={ref}
       href={item.to}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
@@ -100,6 +105,7 @@ function SidebarLink({
         collapsed && "justify-center px-2",
       )}
       title={!useTooltips && collapsed ? item.name : undefined}
+      {...props}
     >
       <item.icon className="h-5 w-5 shrink-0" />
       {!collapsed && <span className="truncate">{item.name}</span>}
@@ -120,7 +126,8 @@ function SidebarLink({
   }
 
   return link;
-}
+});
+SidebarLink.displayName = "SidebarLink";
 
 function SidebarCollapseButton() {
   const { isCollapsed, setIsCollapsed } = useSidebarContext();

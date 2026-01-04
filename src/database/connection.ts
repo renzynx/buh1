@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+import { type BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import * as schema from "./schema";
 
 function createDb(): BunSQLiteDatabase<typeof schema> {

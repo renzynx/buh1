@@ -23,12 +23,14 @@ interface FolderSelectorProps {
   value: string | null;
   onChange: (folderId: string | null) => void;
   label?: string;
+  excludeFolderId?: string;
 }
 
 export function FolderSelector({
   value,
   onChange,
   label = "Destination folder",
+  excludeFolderId,
 }: FolderSelectorProps) {
   const trpc = useTRPC();
   const [open, setOpen] = useState(false);
@@ -42,7 +44,11 @@ export function FolderSelector({
     ],
   });
 
-  const treeRoots = rootData?.items ?? [];
+  const treeRoots = useMemo(() => {
+    const items = rootData?.items ?? [];
+    if (!excludeFolderId) return items;
+    return items.filter((item) => item.id !== excludeFolderId);
+  }, [rootData?.items, excludeFolderId]);
 
   // Auto-expand ancestors when a folder is selected
   useMemo(() => {
@@ -178,6 +184,7 @@ export function FolderSelector({
                     }}
                     value={value}
                     query={query}
+                    excludeFolderId={excludeFolderId}
                   />
                 ))}
               </>
@@ -197,6 +204,7 @@ type TreeNodeProps = {
   onSelect: (id: string) => void;
   value: string | null;
   query: string;
+  excludeFolderId?: string;
 };
 
 function TreeNode({
@@ -207,6 +215,7 @@ function TreeNode({
   onSelect,
   value,
   query,
+  excludeFolderId,
 }: TreeNodeProps) {
   const trpc = useTRPC();
   const isExpanded = Boolean(expandedIds[node.id]);
@@ -232,7 +241,11 @@ function TreeNode({
     ),
   );
 
-  const children = childrenData?.items ?? [];
+  const children = useMemo(() => {
+    const items = childrenData?.items ?? [];
+    if (!excludeFolderId) return items;
+    return items.filter((item) => item.id !== excludeFolderId);
+  }, [childrenData?.items, excludeFolderId]);
   const hasChildren = children.length > 0;
 
   // Check if any descendants match the query
@@ -344,6 +357,7 @@ function TreeNode({
                 onSelect={onSelect}
                 value={value}
                 query={query}
+                excludeFolderId={excludeFolderId}
               />
             ))
           ) : !isLoadingChildren ? (

@@ -2,6 +2,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Folder,
+  FolderInput,
   GripVertical,
   MoreVertical,
   Pencil,
@@ -13,11 +14,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { DatabaseFolders } from "@/database/schema";
+import { useDnd } from "@/hooks/use-dnd";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { useDnd } from "../../hooks/use-dnd";
 import { Loading } from "../loading";
 
 const DeleteFolderDialog = lazy(() =>
@@ -28,6 +31,12 @@ const DeleteFolderDialog = lazy(() =>
 const RenameFolderDialog = lazy(() =>
   import("./dialogs/rename-folder-dialog").then((module) => ({
     default: module.RenameFolderDialog,
+  })),
+);
+
+const MoveFolderDialog = lazy(() =>
+  import("./dialogs/move-folder-dialog").then((module) => ({
+    default: module.MoveFolderDialog,
   })),
 );
 
@@ -53,6 +62,7 @@ export function FolderList({
   const [deleteFolder, setDeleteFolder] = useState<DatabaseFolders | null>(
     null,
   );
+  const [moveFolderId, setMoveFolderId] = useState<string | null>(null);
   const {
     handleDragStart,
     handleDragEnd,
@@ -62,6 +72,7 @@ export function FolderList({
     dropTargetId,
     isDragging,
   } = useDnd();
+  const isMobile = useIsMobile();
 
   if (folders.length === 0 && page === 1) {
     return null;
@@ -105,22 +116,31 @@ export function FolderList({
             return (
               <div
                 key={folder.id}
-                draggable
-                onDragStart={(e) =>
-                  handleDragStart(e, { type: "folder", ids: [folder.id] })
+                draggable={!isMobile}
+                onDragStart={
+                  isMobile
+                    ? undefined
+                    : (e) =>
+                        handleDragStart(e, { type: "folder", ids: [folder.id] })
                 }
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => handleDragOver(e, folder.id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, folder.id)}
+                onDragEnd={isMobile ? undefined : handleDragEnd}
+                onDragOver={
+                  isMobile ? undefined : (e) => handleDragOver(e, folder.id)
+                }
+                onDragLeave={isMobile ? undefined : handleDragLeave}
+                onDrop={isMobile ? undefined : (e) => handleDrop(e, folder.id)}
                 className={cn(
-                  "group relative flex items-center gap-2 rounded-lg border p-3 hover:bg-accent cursor-grab active:cursor-grabbing transition-all",
+                  "group relative flex items-center gap-2 rounded-lg border p-3 hover:bg-accent transition-all",
+                  !isMobile && "cursor-grab active:cursor-grabbing",
                   isDropTarget &&
+                    !isMobile &&
                     "ring-2 ring-primary bg-primary/10 border-primary",
-                  isDragging && !isDropTarget && "opacity-50",
+                  isDragging && !isDropTarget && !isMobile && "opacity-50",
                 )}
               >
-                <GripVertical className="size-4 shrink-0 text-muted-foreground" />
+                {!isMobile && (
+                  <GripVertical className="size-4 shrink-0 text-muted-foreground" />
+                )}
                 <button
                   type="button"
                   onClick={() => onNavigate(folder.id)}
@@ -137,7 +157,10 @@ export function FolderList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+                      className={cn(
+                        "size-6 shrink-0",
+                        !isMobile && "opacity-0 group-hover:opacity-100",
+                      )}
                     >
                       <MoreVertical className="size-4" />
                     </Button>
@@ -147,6 +170,13 @@ export function FolderList({
                       <Pencil className="mr-2 size-4" />
                       Rename
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setMoveFolderId(folder.id)}
+                    >
+                      <FolderInput className="mr-2 size-4" />
+                      Move
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => setDeleteFolder(folder)}
                       className="text-destructive"
@@ -180,6 +210,17 @@ export function FolderList({
             onClose={() => setDeleteFolder(null)}
             onSuccess={() => {
               setDeleteFolder(null);
+              onUpdate();
+            }}
+          />
+        )}
+
+        {moveFolderId && (
+          <MoveFolderDialog
+            folderId={moveFolderId}
+            onClose={() => setMoveFolderId(null)}
+            onMoved={() => {
+              setMoveFolderId(null);
               onUpdate();
             }}
           />

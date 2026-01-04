@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description: "A file storage app",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function RootLayout({
   children,

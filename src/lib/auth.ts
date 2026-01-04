@@ -1,4 +1,3 @@
-import "dotenv/config";
 import fs from "node:fs/promises";
 import { APIError, type BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
