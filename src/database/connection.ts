@@ -1,13 +1,19 @@
-import "dotenv/config";
 import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import * as schema from "./schema";
 
-const sqlite = new Database(process.env.DATABASE_URL ?? "data.db");
+function createDb(): BunSQLiteDatabase<typeof schema> {
+  const sqlite = new Database(process.env.DATABASE_URL ?? "data.db");
+  sqlite.run("PRAGMA journal_mode = WAL");
+  sqlite.run("PRAGMA synchronous = NORMAL");
+  sqlite.run("PRAGMA cache_size = -64000");
+  sqlite.run("PRAGMA busy_timeout = 30000");
+  return drizzle(sqlite, { schema });
+}
 
-sqlite.run("PRAGMA journal_mode = WAL");
-sqlite.run("PRAGMA synchronous = NORMAL");
-sqlite.run("PRAGMA cache_size = -64000");
-sqlite.run("PRAGMA busy_timeout = 5000");
+declare global {
+  var __db: BunSQLiteDatabase<typeof schema> | undefined;
+}
 
-export const db = drizzle(sqlite, { schema });
+export const db: BunSQLiteDatabase<typeof schema> =
+  globalThis.__db ?? (globalThis.__db = createDb());
