@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { getSettings } from "@/lib/settings";
 import "./globals.css";
+import { connection } from "next/server";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -29,6 +30,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSettings();
+
+  await connection();
+
   const baseUrl = process.env.AUTH_BASE_URL ?? "";
   const appName = process.env.APP_NAME || "Buh";
 
