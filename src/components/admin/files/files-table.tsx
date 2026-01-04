@@ -6,7 +6,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useMemo, useState } from "react";
 import { Loading } from "@/components/loading";
 import { Button } from "@/components/ui/button";
 import { DebouncedInput } from "@/components/ui/debounced-input";
@@ -47,35 +47,26 @@ const DeleteFilesDialog = lazy(() =>
 );
 
 export function FilesTable() {
-  const { params, setQueryParams } = useQueryParams();
+  const { params, setQueryParams, getSearchFilter, getFilterValue } =
+    useQueryParams();
   const trpc = useTRPC();
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [deleteFileIds, setDeleteFileIds] = useState<string[]>([]);
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
-
-  const [search, setSearch] = useState(params.search ?? "");
-  const [searchField, setSearchField] = useState(params.status ?? "filename");
-
-  useEffect(() => {
-    setSearch(params.search ?? "");
-    if (params.status && params.status !== "all") {
-      setSearchField(params.status);
-    } else if (!params.status) {
-      setSearchField("filename");
-    }
-  }, [params.search, params.status]);
+  const search = getSearchFilter();
+  const searchField = (getFilterValue("searchField") as string) ?? "filename";
 
   const sorting: SortingState = useMemo(
     () =>
-      params.sortBy
-        ? [{ id: params.sortBy, desc: params.sortDir === "desc" }]
+      params.sort
+        ? [{ id: params.sort.field, desc: params.sort.order === "desc" }]
         : [{ id: "createdAt", desc: true }],
-    [params.sortBy, params.sortDir],
+    [params.sort],
   );
 
-  const buildParams = React.useCallback(
+  const buildApiParams = React.useCallback(
     (
       pIndex: number,
       pSize: number,
@@ -97,7 +88,7 @@ export function FilesTable() {
   );
 
   const queryOptions = trpc.admin.getAllFiles.queryOptions({
-    ...buildParams(pageIndex, pageSize, search, searchField, sorting),
+    ...buildApiParams(pageIndex, pageSize, search, searchField, sorting),
   });
 
   const { data } = useSuspenseQuery(queryOptions);
@@ -110,21 +101,34 @@ export function FilesTable() {
       sField: string,
       sort: SortingState,
     ) => {
-      const newParams = buildParams(pIndex, pSize, searchQuery, sField, sort);
+      const sortState = sort?.[0];
+      const filters = [];
+
+      if (searchQuery) {
+        filters.push({
+          field: "search",
+          value: searchQuery,
+          operator: "contains" as const,
+        });
+      }
+      if (sField !== "filename") {
+        filters.push({
+          field: "searchField",
+          value: sField,
+          operator: "eq" as const,
+        });
+      }
+
       setQueryParams({
-        ...(params ?? {}),
-        page: newParams.page,
-        pageSize: newParams.pageSize,
-        search: newParams.search || undefined,
-        status:
-          newParams.searchField !== "filename"
-            ? newParams.searchField
-            : undefined,
-        sortBy: newParams.sortBy,
-        sortDir: newParams.sortDir as "asc" | "desc",
+        page: pIndex + 1,
+        pageSize: pSize,
+        filter: filters.length > 0 ? filters : undefined,
+        sort: sortState
+          ? { field: sortState.id, order: sortState.desc ? "desc" : "asc" }
+          : undefined,
       });
     },
-    [params, setQueryParams, buildParams],
+    [setQueryParams],
   );
 
   const columns = useMemo(
@@ -186,7 +190,6 @@ export function FilesTable() {
             <Select
               value={searchField}
               onValueChange={(val) => {
-                setSearchField(val);
                 updateUrl(0, pageSize, search, val, sorting);
               }}
             >

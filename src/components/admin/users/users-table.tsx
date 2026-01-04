@@ -13,7 +13,7 @@ import {
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DebouncedInput } from "@/components/ui/debounced-input";
@@ -66,7 +66,8 @@ const EditUserDialog = lazy(() =>
 
 export function UsersTable() {
   const router = useRouter();
-  const { params, setQueryParams } = useQueryParams();
+  const { params, setQueryParams, getSearchFilter, setSearchFilter } =
+    useQueryParams();
   const { data: session } = useSession();
   const queryClient = useQueryClient();
 
@@ -74,12 +75,10 @@ export function UsersTable() {
   const [userToEdit, setUserToEdit] = useState<DatabaseUser | null>(null);
   const [userToBan, setUserToBan] = useState<DatabaseUser | null>(null);
 
-  // Table State
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
-  // Search state
-  const [search, setSearch] = useState(params.search ?? "");
+  const search = getSearchFilter();
 
   const currentUserRole = session?.user?.role ?? "user";
   const currentUserId = session?.user?.id;
@@ -88,33 +87,15 @@ export function UsersTable() {
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
 
-  // Setup sorting state to match URL
   const sorting: SortingState = useMemo(
     () =>
-      params.sortBy
-        ? [{ id: params.sortBy, desc: params.sortDir === "desc" }]
-        : [{ id: "createdAt", desc: true }], // Default sort
-    [params.sortBy, params.sortDir],
+      params.sort
+        ? [{ id: params.sort.field, desc: params.sort.order === "desc" }]
+        : [{ id: "createdAt", desc: true }],
+    [params.sort],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <idc>
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (search !== (params.search ?? "")) {
-        updateUrl(0, pageSize, sorting, search);
-      }
-    }, 500);
-    return () => clearTimeout(timeoutId);
-  }, [search]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <idc>
-  useEffect(() => {
-    if (params.search !== undefined && params.search !== search) {
-      setSearch(params.search);
-    }
-  }, [params.search]);
-
-  const buildParams = React.useCallback(
+  const buildApiParams = React.useCallback(
     (
       pIndex = pageIndex,
       pSize = pageSize,
@@ -133,11 +114,15 @@ export function UsersTable() {
     [pageIndex, pageSize, sorting, search],
   );
 
-  // Data Fetching
   const { data, refetch } = useSuspenseQuery({
-    queryKey: ["users", buildParams(pageIndex, pageSize, sorting, search)],
+    queryKey: ["users", buildApiParams(pageIndex, pageSize, sorting, search)],
     queryFn: async () => {
-      const currentParams = buildParams(pageIndex, pageSize, sorting, search);
+      const currentParams = buildApiParams(
+        pageIndex,
+        pageSize,
+        sorting,
+        search,
+      );
       const { data, error } = await authClient.admin.listUsers({
         query: {
           limit: currentParams.pageSize,
@@ -168,20 +153,29 @@ export function UsersTable() {
       sort = sorting,
       searchQuery = search,
     ) => {
-      const newParams = buildParams(pIndex, pSize, sort, searchQuery);
+      const sortState = sort?.[0];
+      const searchFilter = searchQuery
+        ? [
+            {
+              field: "search",
+              value: searchQuery,
+              operator: "contains" as const,
+            },
+          ]
+        : undefined;
+
       setQueryParams({
-        ...(params ?? {}),
-        page: newParams.page,
-        pageSize: newParams.pageSize,
-        sortBy: newParams.sortBy,
-        sortDir: newParams.sortDir as "asc" | "desc",
-        search: newParams.search,
+        page: pIndex + 1,
+        pageSize: pSize,
+        filter: searchFilter,
+        sort: sortState
+          ? { field: sortState.id, order: sortState.desc ? "desc" : "asc" }
+          : undefined,
       });
     },
-    [params, setQueryParams, buildParams, pageIndex, pageSize, sorting, search],
+    [pageIndex, pageSize, sorting, search, setQueryParams],
   );
 
-  // Mutations
   const { mutate: unbanUser } = useMutation({
     mutationFn: async ({ userId }: { userId: string }) =>
       await authClient.admin.unbanUser({ userId }),
@@ -269,23 +263,25 @@ export function UsersTable() {
     onError: (error) => toast.error(error.message, { id: "remove-user" }),
   });
 
-  const handleImpersonate = (user: DatabaseUser) => {
-    if (isCurrentlyImpersonating) {
-      toast.error(
-        "You are already impersonating a user. Stop impersonating first.",
-      );
-      return;
-    }
+  const handleImpersonate = React.useCallback(
+    (user: DatabaseUser) => {
+      if (isCurrentlyImpersonating) {
+        toast.error(
+          "You are already impersonating a user. Stop impersonating first.",
+        );
+        return;
+      }
 
-    if (currentUserRole === "admin" && user.role === "superadmin") {
-      toast.error("Admins cannot impersonate superadmins.");
-      return;
-    }
+      if (currentUserRole === "admin" && user.role === "superadmin") {
+        toast.error("Admins cannot impersonate superadmins.");
+        return;
+      }
 
-    impersonateUser({ userId: user.id });
-  };
+      impersonateUser({ userId: user.id });
+    },
+    [isCurrentlyImpersonating, currentUserRole, impersonateUser],
+  );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <idc>
   const columns = useMemo(
     () =>
       getColumns({
@@ -299,14 +295,21 @@ export function UsersTable() {
         onImpersonate: handleImpersonate,
         onSetRole: (userId, role) => setRole({ userId, role }),
       }),
-    [currentUserId, currentUserRole, isCurrentlyImpersonating],
+    [
+      currentUserId,
+      currentUserRole,
+      isCurrentlyImpersonating,
+      unbanUser,
+      setRole,
+      handleImpersonate,
+    ],
   );
 
   const table = useReactTable({
     data: (data?.users ?? []) as DatabaseUser[],
     columns,
     manualPagination: true,
-    manualFiltering: true, // Server-side filtering
+    manualFiltering: true,
     manualSorting: true,
     enableSortingRemoval: false,
     state: {
@@ -341,7 +344,6 @@ export function UsersTable() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // Pagination Helper
   const pageCount = table.getPageCount();
   const currentPageNum = pageIndex + 1;
 
@@ -363,11 +365,10 @@ export function UsersTable() {
 
   return (
     <div className="space-y-4">
-      {/* Header / Search */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
         <DebouncedInput
           value={search}
-          onChange={(v) => setSearch(String(v))}
+          onChange={(v) => setSearchFilter(String(v))}
           className="w-full md:w-64"
           placeholder="Search users by email..."
         />
@@ -408,7 +409,6 @@ export function UsersTable() {
         )}
       </Suspense>
 
-      {/* Table */}
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
@@ -469,8 +469,7 @@ export function UsersTable() {
                       <Button
                         variant="link"
                         onClick={() => {
-                          setSearch("");
-                          updateUrl(0, pageSize, sorting, "");
+                          setSearchFilter("");
                         }}
                         className="ml-2"
                       >
@@ -485,7 +484,6 @@ export function UsersTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
       {data && data.users.length > 0 && (
         <div className="flex flex-col items-center md:flex-row md:items-center md:justify-between gap-2">
           <div>

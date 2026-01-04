@@ -2,15 +2,47 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import superjson from "superjson";
+
+export interface FilterItem {
+  field: string;
+  value: string | number | boolean | Date;
+  operator?: "eq" | "contains" | "gt" | "lt" | "gte" | "lte";
+}
+
+export interface SortState {
+  field: string;
+  order: "asc" | "desc";
+}
 
 export interface QueryParams {
   page?: number;
   pageSize?: number;
-  search?: string;
-  sortBy?: string;
-  sortDir?: "asc" | "desc";
+  filter?: FilterItem[];
+  sort?: SortState;
   folderId?: string;
-  status?: string;
+}
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_SORT: SortState = { field: "createdAt", order: "desc" };
+
+function parseSuperjson<T>(value: string | null, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return superjson.parse<T>(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function isDefaultSort(sort: SortState | undefined): boolean {
+  if (!sort) return true;
+  return sort.field === DEFAULT_SORT.field && sort.order === DEFAULT_SORT.order;
+}
+
+function isEmptyFilter(filter: FilterItem[] | undefined): boolean {
+  return !filter || filter.length === 0;
 }
 
 export function useQueryParams() {
@@ -18,61 +50,47 @@ export function useQueryParams() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const params = useMemo(() => {
+  const params = useMemo((): QueryParams => {
     const page = Number(searchParams.get("page") ?? NaN);
     const pageSize = Number(searchParams.get("pageSize") ?? NaN);
-    const search = searchParams.get("search") || searchParams.get("q") || "";
-    const sortBy = searchParams.get("sortBy") || undefined;
-    const sortDir =
-      (searchParams.get("sortDir") as "asc" | "desc") || undefined;
+    const filter = parseSuperjson<FilterItem[]>(searchParams.get("filter"), []);
+    const sort = parseSuperjson<SortState | undefined>(
+      searchParams.get("sort"),
+      undefined,
+    );
     const folderId = searchParams.get("folderId") || undefined;
-    const status = searchParams.get("status") || undefined;
 
     return {
-      page: !Number.isNaN(page) ? page : undefined,
-      pageSize: !Number.isNaN(pageSize) ? pageSize : undefined,
-      search: search || undefined,
-      sortBy,
-      sortDir,
+      page: !Number.isNaN(page) ? page : DEFAULT_PAGE,
+      pageSize: !Number.isNaN(pageSize) ? pageSize : DEFAULT_PAGE_SIZE,
+      filter: filter.length > 0 ? filter : undefined,
+      sort: sort ?? DEFAULT_SORT,
       folderId,
-      status,
-    } as QueryParams;
+    };
   }, [searchParams]);
 
   const setQueryParams = useCallback(
     (newParams: QueryParams, replace = false) => {
       const newSearchParams = new URLSearchParams();
 
-      if (newParams.page && newParams.page !== 1) {
+      if (newParams.page && newParams.page !== DEFAULT_PAGE) {
         newSearchParams.set("page", String(newParams.page));
       }
 
-      if (newParams.pageSize && newParams.pageSize !== 10) {
+      if (newParams.pageSize && newParams.pageSize !== DEFAULT_PAGE_SIZE) {
         newSearchParams.set("pageSize", String(newParams.pageSize));
       }
 
-      if (newParams.search) {
-        newSearchParams.set("search", newParams.search);
+      if (!isEmptyFilter(newParams.filter)) {
+        newSearchParams.set("filter", superjson.stringify(newParams.filter));
       }
 
-      if (newParams.sortBy && newParams.sortBy !== "createdAt") {
-        newSearchParams.set("sortBy", newParams.sortBy);
-        if (newParams.sortDir)
-          newSearchParams.set("sortDir", newParams.sortDir);
-      } else if (
-        newParams.sortBy === "createdAt" &&
-        newParams.sortDir === "asc"
-      ) {
-        newSearchParams.set("sortBy", "createdAt");
-        newSearchParams.set("sortDir", "asc");
+      if (!isDefaultSort(newParams.sort)) {
+        newSearchParams.set("sort", superjson.stringify(newParams.sort));
       }
 
       if (newParams.folderId) {
         newSearchParams.set("folderId", newParams.folderId);
-      }
-
-      if (newParams.status && newParams.status !== "all") {
-        newSearchParams.set("status", newParams.status);
       }
 
       const queryString = newSearchParams.toString();
@@ -90,5 +108,67 @@ export function useQueryParams() {
     [pathname, searchParams, router],
   );
 
-  return { params, setQueryParams };
+  const getSearchFilter = useCallback((): string => {
+    const searchFilter = params.filter?.find((f) => f.field === "search");
+    return searchFilter ? String(searchFilter.value) : "";
+  }, [params.filter]);
+
+  const setSearchFilter = useCallback(
+    (search: string) => {
+      const otherFilters =
+        params.filter?.filter((f) => f.field !== "search") ?? [];
+      const newFilter = search
+        ? [
+            ...otherFilters,
+            { field: "search", value: search, operator: "contains" as const },
+          ]
+        : otherFilters;
+
+      setQueryParams({
+        ...params,
+        page: DEFAULT_PAGE,
+        filter: newFilter.length > 0 ? newFilter : undefined,
+      });
+    },
+    [params, setQueryParams],
+  );
+
+  const getFilterValue = useCallback(
+    (field: string): string | number | boolean | Date | undefined => {
+      const filterItem = params.filter?.find((f) => f.field === field);
+      return filterItem?.value;
+    },
+    [params.filter],
+  );
+
+  const setFilterValue = useCallback(
+    (
+      field: string,
+      value: string | number | boolean | Date | undefined,
+      operator: FilterItem["operator"] = "eq",
+    ) => {
+      const otherFilters =
+        params.filter?.filter((f) => f.field !== field) ?? [];
+      const newFilter =
+        value !== undefined
+          ? [...otherFilters, { field, value, operator }]
+          : otherFilters;
+
+      setQueryParams({
+        ...params,
+        page: DEFAULT_PAGE,
+        filter: newFilter.length > 0 ? newFilter : undefined,
+      });
+    },
+    [params, setQueryParams],
+  );
+
+  return {
+    params,
+    setQueryParams,
+    getSearchFilter,
+    setSearchFilter,
+    getFilterValue,
+    setFilterValue,
+  };
 }

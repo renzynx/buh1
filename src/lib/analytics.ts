@@ -1,4 +1,5 @@
 import { and, count, eq, gt, sql, sum } from "drizzle-orm";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/database";
 import * as schema from "@/database/schema";
 
@@ -24,22 +25,10 @@ export type AnalyticsData = {
   };
 };
 
-type CachedAnalytics = {
-  data: AnalyticsData;
-  timestamp: number;
-};
+export const ANALYTICS_CACHE_TAG = "app-analytics";
 
-let cachedAnalytics: CachedAnalytics | null = null;
-
-const CACHE_TTL = 15 * 60 * 1000;
-
-export const getAnalytics = async (): Promise<AnalyticsData> => {
+const fetchAnalyticsFromDb = async (): Promise<AnalyticsData> => {
   const now = Date.now();
-
-  if (cachedAnalytics && now - cachedAnalytics.timestamp < CACHE_TTL) {
-    return cachedAnalytics.data;
-  }
-
   const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
   const nowDate = new Date(now);
 
@@ -110,7 +99,7 @@ export const getAnalytics = async (): Promise<AnalyticsData> => {
     );
   const activeInvites = activeInvitesResult?.count ?? 0;
 
-  const data: AnalyticsData = {
+  return {
     users: {
       total: totalUsers,
       new: newUsers,
@@ -131,15 +120,19 @@ export const getAnalytics = async (): Promise<AnalyticsData> => {
       active: activeInvites,
     },
   };
-
-  cachedAnalytics = {
-    data,
-    timestamp: now,
-  };
-
-  return data;
 };
 
-export const invalidateAnalyticsCache = (): void => {
-  cachedAnalytics = null;
+const FIFTEEN_MINUTES_IN_SECONDS = 60 * 15;
+
+export const getAnalytics = unstable_cache(
+  fetchAnalyticsFromDb,
+  [ANALYTICS_CACHE_TAG],
+  {
+    tags: [ANALYTICS_CACHE_TAG],
+    revalidate: FIFTEEN_MINUTES_IN_SECONDS,
+  },
+);
+
+export const invalidateAnalyticsCache = () => {
+  revalidateTag(ANALYTICS_CACHE_TAG, "max");
 };

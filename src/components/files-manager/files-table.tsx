@@ -15,11 +15,12 @@ import {
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import React, { lazy, Suspense, useState } from "react";
+import { useDnd } from "@/hooks/use-dnd";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQueryParams } from "@/hooks/use-query-params";
 import type { FileRow } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
-import { useDnd } from "../../hooks/use-dnd";
 import { Loading } from "../loading";
 import { DebouncedInput } from "../ui/debounced-input";
 import {
@@ -49,7 +50,6 @@ import {
 import { FilesBulkActionsBar } from "./files-bulk-actions-bar";
 import { getColumns } from "./files-columns";
 
-// Lazy load dialogs
 const DeleteFilesDialog = lazy(() =>
   import("./dialogs/delete-files-dialog").then((module) => ({
     default: module.DeleteFilesDialog,
@@ -78,7 +78,8 @@ declare module "@tanstack/react-table" {
 }
 
 export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
-  const { params, setQueryParams } = useQueryParams();
+  const { params, setQueryParams, getSearchFilter, setSearchFilter } =
+    useQueryParams();
   const [deleteFileIds, setDeleteFileIds] = useState<string[]>([]);
   const [moveFileIds, setMoveFileIds] = useState<string[]>([]);
   const [shareFile, setShareFile] = useState<FileRow | null>(null);
@@ -88,24 +89,25 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
   );
   const trpc = useTRPC();
   const { handleDragStart, handleDragEnd, isDragging } = useDnd();
+  const isMobile = useIsMobile();
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
-  const search = params.search ?? "";
+  const search = getSearchFilter();
 
   const sorting: SortingState = React.useMemo(
     () =>
-      params.sortBy
-        ? [{ id: params.sortBy, desc: params.sortDir === "desc" }]
+      params.sort
+        ? [{ id: params.sort.field, desc: params.sort.order === "desc" }]
         : [{ id: "createdAt", desc: true }],
-    [params.sortBy, params.sortDir],
+    [params.sort],
   );
 
   const [rowSelection, setRowSelection] = React.useState<
     Record<string, boolean>
   >({});
 
-  const buildParams = React.useCallback(
+  const buildApiParams = React.useCallback(
     (
       pIndex = pageIndex,
       pSize = pageSize,
@@ -128,11 +130,10 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
 
   const { data } = useSuspenseQuery(
     trpc.user.getFiles.queryOptions({
-      ...buildParams(pageIndex, pageSize, search, sorting, currentFolderId),
+      ...buildApiParams(pageIndex, pageSize, search, sorting, currentFolderId),
     }),
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <e>
   const updateUrl = React.useCallback(
     (
       pIndex = pageIndex,
@@ -140,17 +141,28 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
       searchQuery = search,
       sort = sorting,
     ) => {
-      const newParams = buildParams(pIndex, pSize, searchQuery, sort);
+      const sortState = sort?.[0];
+      const searchFilter = searchQuery
+        ? [
+            {
+              field: "search",
+              value: searchQuery,
+              operator: "contains" as const,
+            },
+          ]
+        : [];
+
       setQueryParams({
-        ...(params ?? {}),
-        page: newParams.page,
-        pageSize: newParams.pageSize,
-        search: newParams.search || undefined,
-        sortBy: newParams.sortBy,
-        sortDir: newParams.sortDir as "asc" | "desc",
+        page: pIndex + 1,
+        pageSize: pSize,
+        filter: searchFilter.length > 0 ? searchFilter : undefined,
+        sort: sortState
+          ? { field: sortState.id, order: sortState.desc ? "desc" : "asc" }
+          : undefined,
+        folderId: currentFolderId,
       });
     },
-    [params, setQueryParams],
+    [pageIndex, pageSize, search, sorting, currentFolderId, setQueryParams],
   );
 
   const fuzzyFilter = React.useCallback<FilterFn<FileRow>>(
@@ -197,7 +209,7 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
     manualPagination: true,
     manualFiltering: true,
     manualSorting: true,
-    enableSortingRemoval: false, // Prevent unsorted state, always toggle between asc/desc
+    enableSortingRemoval: false,
     state: {
       columnFilters,
       globalFilter: search,
@@ -208,8 +220,7 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
     onRowSelectionChange: setRowSelection,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: (val) => {
-      const newSearch = String(val ?? "");
-      updateUrl(0, pageSize, newSearch, sorting);
+      setSearchFilter(String(val ?? ""));
     },
     onSortingChange: (updater) => {
       let next: SortingState;
@@ -235,7 +246,6 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // pagination helpers
   const pageCount = data?.pageCount ?? 0;
   const currentPageNum = pageIndex + 1;
 
@@ -261,8 +271,7 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
         <DebouncedInput
           value={search}
           onChange={(v) => {
-            const newSearch = String(v ?? "");
-            updateUrl(0, pageSize, newSearch, sorting);
+            setSearchFilter(String(v ?? ""));
           }}
           className="w-full p-2 rounded-md border"
           placeholder="Search files..."
@@ -314,7 +323,7 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                <TableHead className="w-8" />
+                {!isMobile && <TableHead className="w-8" />}
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} colSpan={header.colSpan}>
                     {header.isPlaceholder ? null : (
@@ -346,7 +355,6 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
             {table.getRowModel().rows.map((row) => {
               const file = row.original as FileRow;
               const isSelected = Boolean(rowSelection[row.id]);
-              // Determine which file IDs to drag: selected files if this file is selected, otherwise just this file
               const selectedIds = Object.keys(rowSelection).filter(
                 (k) => rowSelection[k],
               );
@@ -361,19 +369,24 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
               return (
                 <TableRow
                   key={row.id}
-                  draggable
-                  onDragStart={(e) =>
-                    handleDragStart(e, { type: "file", ids: dragIds })
+                  draggable={!isMobile}
+                  onDragStart={
+                    isMobile
+                      ? undefined
+                      : (e) =>
+                          handleDragStart(e, { type: "file", ids: dragIds })
                   }
-                  onDragEnd={handleDragEnd}
+                  onDragEnd={isMobile ? undefined : handleDragEnd}
                   className={cn(
-                    "cursor-grab active:cursor-grabbing",
-                    isDragging && "opacity-50",
+                    !isMobile && "cursor-grab active:cursor-grabbing",
+                    isDragging && !isMobile && "opacity-50",
                   )}
                 >
-                  <TableCell className="w-8">
-                    <GripVertical className="size-4 text-muted-foreground" />
-                  </TableCell>
+                  {!isMobile && (
+                    <TableCell className="w-8">
+                      <GripVertical className="size-4 text-muted-foreground" />
+                    </TableCell>
+                  )}
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -464,9 +477,9 @@ export function FilesTable({ currentFolderId }: { currentFolderId?: string }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={String(pageSize)}>
-                  Show {pageSize}
+              {[10, 20, 30, 40, 50].map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  Show {size}
                 </SelectItem>
               ))}
             </SelectContent>

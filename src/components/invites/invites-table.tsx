@@ -13,7 +13,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -65,7 +65,13 @@ declare module "@tanstack/react-table" {
 }
 
 export function InvitesTable() {
-  const { params, setQueryParams } = useQueryParams();
+  const {
+    params,
+    setQueryParams,
+    getSearchFilter,
+    setSearchFilter,
+    getFilterValue,
+  } = useQueryParams();
   const trpc = useTRPC();
   const { copyToClipboard } = useClipboard();
   const { settings } = useSettings();
@@ -75,40 +81,21 @@ export function InvitesTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
-  // Search state
-  const [search, setSearch] = useState(params.search ?? "");
+  const search = getSearchFilter();
+  const status = (getFilterValue("status") as InviteStatus | "all") ?? "all";
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
-  const status = (params.status as InviteStatus | "all") ?? "all";
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <idc>
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (search !== (params.search ?? "")) {
-        updateUrl(0, pageSize, status, sorting, search);
-      }
-    }, 500);
-    return () => clearTimeout(timeoutId);
-  }, [search]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <idc>
-  useEffect(() => {
-    if (params.search !== undefined && params.search !== search) {
-      setSearch(params.search);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.search]);
 
   const sorting: SortingState = useMemo(
     () =>
-      params.sortBy
-        ? [{ id: params.sortBy, desc: params.sortDir === "desc" }]
+      params.sort
+        ? [{ id: params.sort.field, desc: params.sort.order === "desc" }]
         : [{ id: "createdAt", desc: true }],
-    [params.sortBy, params.sortDir],
+    [params.sort],
   );
 
-  const buildParams = React.useCallback(
+  const buildApiParams = React.useCallback(
     (
       pIndex = pageIndex,
       pSize = pageSize,
@@ -129,7 +116,7 @@ export function InvitesTable() {
 
   const { data } = useSuspenseQuery(
     trpc.user.getInvites.queryOptions({
-      ...buildParams(pageIndex, pageSize, status, sorting),
+      ...buildApiParams(pageIndex, pageSize, status, sorting),
     }),
   );
 
@@ -141,33 +128,36 @@ export function InvitesTable() {
       sort = sorting,
       searchQuery = search,
     ) => {
-      // Get params without search
-      const newParams = buildParams(pIndex, pSize, statusFilter, sort);
+      const sortState = sort?.[0];
+      const filters = [];
 
-      // Manually add search to the URL state
+      if (searchQuery) {
+        filters.push({
+          field: "search",
+          value: searchQuery,
+          operator: "contains" as const,
+        });
+      }
+      if (statusFilter !== "all") {
+        filters.push({
+          field: "status",
+          value: statusFilter,
+          operator: "eq" as const,
+        });
+      }
+
       setQueryParams({
-        ...(params ?? {}),
-        page: newParams.page,
-        pageSize: newParams.pageSize,
-        status: newParams.status,
-        sortBy: newParams.sortBy,
-        sortDir: newParams.sortDir as "asc" | "desc",
-        search: searchQuery || undefined,
+        page: pIndex + 1,
+        pageSize: pSize,
+        filter: filters.length > 0 ? filters : undefined,
+        sort: sortState
+          ? { field: sortState.id, order: sortState.desc ? "desc" : "asc" }
+          : undefined,
       });
     },
-    [
-      params,
-      setQueryParams,
-      buildParams,
-      pageIndex,
-      pageSize,
-      status,
-      sorting,
-      search,
-    ],
+    [pageIndex, pageSize, status, sorting, search, setQueryParams],
   );
 
-  // Client-side fuzzy filter
   const fuzzyFilter = React.useCallback<FilterFn<InviteRow>>(
     (row, columnId, value, addMeta) => {
       const itemRank = rankItem(row.getValue(columnId), value);
@@ -177,18 +167,20 @@ export function InvitesTable() {
     [],
   );
 
-  const handleCopyCode = (code: string) => {
-    copyToClipboard(code, "Invite code copied to clipboard");
-  };
+  const handleCopyCode = React.useCallback(
+    (code: string) => {
+      copyToClipboard(code, "Invite code copied to clipboard");
+    },
+    [copyToClipboard],
+  );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <idc>
   const columns = useMemo(
     () =>
       getColumns({
         onCopy: handleCopyCode,
         onDelete: setDeleteInviteCode,
       }),
-    [],
+    [handleCopyCode],
   );
 
   const table = useReactTable({
@@ -235,7 +227,6 @@ export function InvitesTable() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // Pagination Logic
   const pageCount = data?.pageCount ?? 0;
   const currentPageNum = pageIndex + 1;
 
@@ -257,12 +248,11 @@ export function InvitesTable() {
 
   return (
     <div className="space-y-4">
-      {/* Header / Filters */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
         <Input
           placeholder="Search invites..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => setSearchFilter(e.target.value)}
           className="w-full md:w-64"
         />
 
@@ -313,7 +303,6 @@ export function InvitesTable() {
         )}
       </Suspense>
 
-      {/* Table */}
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
@@ -372,7 +361,7 @@ export function InvitesTable() {
                       <Button
                         variant="link"
                         onClick={() => {
-                          setSearch("");
+                          setSearchFilter("");
                           updateUrl(0, pageSize, "all", sorting, "");
                         }}
                         className="ml-2"
@@ -388,7 +377,6 @@ export function InvitesTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
       {data && data.items.length > 0 && (
         <div className="flex flex-col items-center md:flex-row md:items-center md:justify-between gap-2">
           <div>

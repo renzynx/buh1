@@ -18,11 +18,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useDnd } from "@/hooks/use-dnd";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQueryParams } from "@/hooks/use-query-params";
 import type { FileRow } from "@/lib/types";
 import { cn, formatBytes } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
-import { useDnd } from "../../hooks/use-dnd";
 import { Loading } from "../loading";
 import { FilesBulkActionsBar } from "./files-bulk-actions-bar";
 
@@ -48,13 +49,14 @@ const MoveFilesDialog = lazy(() =>
 );
 
 export function FilesGrid({ currentFolderId }: { currentFolderId?: string }) {
-  const { params, setQueryParams } = useQueryParams();
+  const { params, setQueryParams, getSearchFilter } = useQueryParams();
   const trpc = useTRPC();
   const { handleDragStart, handleDragEnd, isDragging } = useDnd();
+  const isMobile = useIsMobile();
 
   const pageIndex = (params.page ?? 1) - 1;
   const pageSize = params.pageSize ?? 10;
-  const search = params.search ?? "";
+  const search = getSearchFilter();
 
   const buildParams = (
     pIndex = pageIndex,
@@ -65,8 +67,8 @@ export function FilesGrid({ currentFolderId }: { currentFolderId?: string }) {
       page: pIndex + 1,
       pageSize: pSize,
       search: searchQuery,
-      sortBy: "createdAt",
-      sortDir: "desc",
+      sortBy: params.sort?.field ?? "createdAt",
+      sortDir: params.sort?.order ?? "desc",
       folderId: currentFolderId || undefined,
     }) as const;
 
@@ -92,11 +94,16 @@ export function FilesGrid({ currentFolderId }: { currentFolderId?: string }) {
     pSize = pageSize,
     searchQuery = search,
   ) => {
+    const searchFilter = searchQuery
+      ? [{ field: "search", value: searchQuery, operator: "contains" as const }]
+      : undefined;
+
     setQueryParams({
-      ...(params ?? {}),
       page: pIndex + 1,
       pageSize: pSize,
-      search: searchQuery || undefined,
+      filter: searchFilter,
+      sort: params.sort,
+      folderId: currentFolderId,
     });
   };
 
@@ -152,20 +159,25 @@ export function FilesGrid({ currentFolderId }: { currentFolderId?: string }) {
             return (
               <div
                 key={f.id}
-                draggable
-                onDragStart={(e) =>
-                  handleDragStart(e, { type: "file", ids: dragIds })
+                draggable={!isMobile}
+                onDragStart={
+                  isMobile
+                    ? undefined
+                    : (e) => handleDragStart(e, { type: "file", ids: dragIds })
                 }
-                onDragEnd={handleDragEnd}
+                onDragEnd={isMobile ? undefined : handleDragEnd}
                 className={cn(
-                  "rounded border p-3 flex flex-col gap-2 hover:shadow-md cursor-grab active:cursor-grabbing transition-opacity",
-                  isDragging && "opacity-50",
+                  "rounded border p-3 flex flex-col gap-2 hover:shadow-md transition-opacity",
+                  !isMobile && "cursor-grab active:cursor-grabbing",
+                  isDragging && !isMobile && "opacity-50",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-1 items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <GripVertical className="size-4 text-muted-foreground" />
+                      {!isMobile && (
+                        <GripVertical className="size-4 text-muted-foreground" />
+                      )}
                       <Checkbox
                         aria-label={`Select ${f.filename}`}
                         checked={checked}
