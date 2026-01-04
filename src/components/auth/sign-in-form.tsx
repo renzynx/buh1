@@ -84,7 +84,7 @@ export function SignInForm({ redirectTo = "/dashboard" }: SignInFormProps) {
     >
       {error && (
         <div className="rounded-lg bg-destructive/10 p-3 flex items-start gap-3 text-sm text-destructive border border-destructive/20">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
           <p>{error}</p>
         </div>
       )}

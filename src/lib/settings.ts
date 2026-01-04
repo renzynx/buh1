@@ -1,3 +1,4 @@
+import { revalidateTag, unstable_cache } from "next/cache";
 import { z } from "zod";
 import { db } from "@/database";
 import { configStore } from "@/database/schema";
@@ -48,11 +49,9 @@ export const updateSettingsSchema = z.object(zShape) as z.ZodType<
 export const settingKeyMap = keyMap;
 export const DEFAULTS = defaults;
 
-let cachedConfig: AppSettings | null = null;
+export const SETTINGS_CACHE_TAG = "app-settings";
 
-export const getSettings = async (): Promise<AppSettings> => {
-  if (cachedConfig) return cachedConfig;
-
+const fetchSettingsFromDb = async (): Promise<AppSettings> => {
   const rows = await db.select().from(configStore);
 
   const finalConfig: Record<string, unknown> = {};
@@ -93,10 +92,15 @@ export const getSettings = async (): Promise<AppSettings> => {
       .execute();
   }
 
-  cachedConfig = finalConfig as AppSettings;
-  return cachedConfig;
+  return finalConfig as AppSettings;
 };
 
+export const getSettings = unstable_cache(
+  fetchSettingsFromDb,
+  [SETTINGS_CACHE_TAG],
+  { tags: [SETTINGS_CACHE_TAG] },
+);
+
 export const invalidateSettingsCache = () => {
-  cachedConfig = null;
+  revalidateTag(SETTINGS_CACHE_TAG, "max");
 };

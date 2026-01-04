@@ -13,11 +13,8 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <main className="min-h-screen w-screen">
       {message && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
-          <Alert
-            variant="destructive"
-            className="flex items-center shadow-lg backdrop-blur-sm bg-destructive/95"
-          >
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
+          <Alert variant="destructive">
             <AlertCircleIcon />
             <AlertTitle className="pt-1">{message}</AlertTitle>
           </Alert>
